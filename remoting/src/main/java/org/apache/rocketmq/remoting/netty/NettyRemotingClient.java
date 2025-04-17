@@ -184,6 +184,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * 启动 NettyClient 端
+     */
     @Override
     public void start() {
         if (this.defaultEventExecutorGroup == null) {
@@ -212,7 +215,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new NettyEncoder(),
                         new NettyDecoder(),
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
+                        // todo netty 连接管理 (上线、下线、异常、idle等等)
                         new NettyConnectManageHandler(),
+                        // todo netty 消息处理器 (很简洁)
                         new NettyClientHandler());
                 }
             });
@@ -664,6 +669,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
                     this.namesrvAddrChoosed.set(newAddr);
                     LOGGER.info("new name server is chosen. OLD: {} , NEW: {}. namesrvIndex = {}", addr, newAddr, namesrvIndex);
+                    //todo netty client 创建 channelAsync
                     return this.createChannelAsync(newAddr);
                 }
             } catch (Exception e) {
@@ -707,10 +713,17 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         return null;
     }
 
+    
+    /**
+     * 这里是创建与其他 NameSvcServer的连接
+     * todo 创建 NettyClient Channel 连接
+     */
     private ChannelWrapper createChannel(String addr) {
         String[] hostAndPort = getHostAndPort(addr);
         ChannelFuture channelFuture = fetchBootstrap(addr)
-            .connect(hostAndPort[0], Integer.parseInt(hostAndPort[1]));
+                // todo 这里开始连接
+                .connect(hostAndPort[0], Integer.parseInt(hostAndPort[1]));
+
         LOGGER.info("createChannel: begin to connect remote host[{}] asynchronously", addr);
         ChannelWrapper cw = new ChannelWrapper(addr, channelFuture);
         this.channelTables.put(addr, cw);
@@ -983,6 +996,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 @Override
                 public void run() {
                     try {
+                        /**
+                         * 创建客户端 && Channel
+                         */
                         Channel channel = NettyRemotingClient.this.getAndCreateChannel(namesrvAddr);
                         if (channel != null) {
                             NettyRemotingClient.this.availableNamesrvAddrMap.putIfAbsent(namesrvAddr, true);
@@ -1133,6 +1149,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * netty Client 收到消息处理器
+     */
     class NettyClientHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
         @Override

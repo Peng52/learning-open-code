@@ -16,12 +16,6 @@
  */
 package org.apache.rocketmq.namesrv;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.concurrent.Callable;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -34,12 +28,19 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
 import org.apache.rocketmq.controller.ControllerManager;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
+
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 
 public class NamesrvStartup {
 
@@ -51,15 +52,22 @@ public class NamesrvStartup {
     private static NettyClientConfig nettyClientConfig = null;
     private static ControllerConfig controllerConfig = null;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CloneNotSupportedException {
         main0(args);
         controllerManagerMain();
     }
 
     public static NamesrvController main0(String[] args) {
         try {
+            /**
+             * 解析 command line 和 配置文件初始化
+             */
             parseCommandlineAndConfigFile(args);
+            /**
+             * 创建并启动 NameSrvController
+             */
             NamesrvController controller = createAndStartNamesrvController();
+
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -71,6 +79,7 @@ public class NamesrvStartup {
 
     public static ControllerManager controllerManagerMain() {
         try {
+            // namesrvConfig.isEnableControllerInNamesrv() 这里启动时候, 走到这里是false，原因不明。
             if (namesrvConfig.isEnableControllerInNamesrv()) {
                 return createAndStartControllerManager();
             }
@@ -138,12 +147,27 @@ public class NamesrvStartup {
 
     }
 
+    /**
+     * todo
+     * 创建并启动 NameSrvController
+     */
     public static NamesrvController createAndStartNamesrvController() throws Exception {
 
+        /**
+         * 1. 创建 NameSrvController 对象，并传入nameSrv/netty server /client 配置文件
+         */
         NamesrvController controller = createNamesrvController();
+
+        /**
+         * 1. 加载配置, 初始化配置
+         * 2. 启动 Netty
+         */
         start(controller);
+
+        // 打印日志
         NettyServerConfig serverConfig = controller.getNettyServerConfig();
-        String tip = String.format("The Name Server boot success. serializeType=%s, address %s:%d", RemotingCommand.getSerializeTypeConfigInThisServer(), serverConfig.getBindAddress(), serverConfig.getListenPort());
+        String tip = String.format("The Name Server boot success. serializeType=%s, address %s:%d",
+                RemotingCommand.getSerializeTypeConfigInThisServer(), serverConfig.getBindAddress(), serverConfig.getListenPort());
         log.info(tip);
         System.out.printf("%s%n", tip);
         return controller;
@@ -162,18 +186,23 @@ public class NamesrvStartup {
         if (null == controller) {
             throw new IllegalArgumentException("NamesrvController is null");
         }
-
+        // 如果返回不是true 就关闭。看代码只可能返回true或者抛出异常
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
             System.exit(-3);
         }
-
+        // 增加 shutdownHook
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, (Callable<Void>) () -> {
             controller.shutdown();
             return null;
         }));
 
+        /**
+         * 1. 启动netty server
+         * 2. 启动netty client
+         */
+        // 底层封装的netty启动
         controller.start();
 
         return controller;

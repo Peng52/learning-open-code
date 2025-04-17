@@ -109,6 +109,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     /**
      * NettyRemotingServer may hold multiple SubRemotingServer, each server will be stored in this container with a
      * ListenPort key.
+     * todo nettyServer 启动多个监听端口, 在分发的时候根据不同的本地端口，找到对应的处理器
      */
     private final ConcurrentMap<Integer/*Port*/, NettyRemotingAbstract> remotingServerTable = new ConcurrentHashMap<>();
 
@@ -123,6 +124,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private TlsModeHandler tlsModeHandler;
     private NettyEncoder encoder;
     private NettyConnectManageHandler connectionManageHandler;
+    /**
+     * todo 这个就是 Read0 继承Netty SimpleChannelInboundHandler 入站处理
+     */
     private NettyServerHandler serverHandler;
     private RemotingCodeDistributionHandler distributionHandler;
 
@@ -215,6 +219,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             .childHandler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) {
+                    // todo 添加各种 Handler
                     configChannel(ch);
                 }
             });
@@ -467,6 +472,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 if (detectionResult.state() == ProtocolDetectionState.NEEDS_MORE_DATA) {
                     return;
                 }
+                /**
+                 * 还可以动态添加 pipeline
+                 */
                 if (detectionResult.state() == ProtocolDetectionState.DETECTED) {
                     ctx.pipeline().addAfter(defaultEventExecutorGroup, ctx.name(), HA_PROXY_DECODER, new HAProxyMessageDecoder())
                             .addAfter(defaultEventExecutorGroup, HA_PROXY_DECODER, HA_PROXY_HANDLER, new HAProxyMessageHandler())
@@ -553,6 +561,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             int localPort = RemotingHelper.parseSocketAddressPort(ctx.channel().localAddress());
             NettyRemotingAbstract remotingAbstract = NettyRemotingServer.this.remotingServerTable.get(localPort);
             if (localPort != -1 && remotingAbstract != null) {
+                // todo 收到消息的处理器
                 remotingAbstract.processMessageReceived(ctx, msg);
                 return;
             }
@@ -640,6 +649,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             log.warn("NETTY SERVER PIPELINE: exceptionCaught {}", remoteAddress);
             log.warn("NETTY SERVER PIPELINE: exceptionCaught exception.", cause);
 
+            //todo pengcheng: 这些事件都放到一个Event通知里面去了，这种处理方式可以参考
             if (NettyRemotingServer.this.channelEventListener != null) {
                 NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.EXCEPTION, remoteAddress, ctx.channel()));
             }

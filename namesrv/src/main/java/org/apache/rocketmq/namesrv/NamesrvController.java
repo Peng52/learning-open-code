@@ -99,12 +99,19 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
+        // 加载kvConfig
         loadConfig();
+        // todo 创建netty服务端和客户端  SSL设置
         initiateNetworkComponents();
+        // 初始化线程池 RemotingExecutorThread_ ; ClientRequestExecutorThread_
         initiateThreadExecutors();
+        // 注册一些Netty请求处理器，不知道这些处理器具体有什么用
         registerProcessor();
+        // 启动定时任务，具体任务内容？
         startScheduleService();
+        // SSL文件路径，监听SSL是否发生变化
         initiateSslContext();
+        // 没具体弄清楚？？
         initiateRpcHooks();
         return true;
     }
@@ -114,12 +121,21 @@ public class NamesrvController {
     }
 
     private void startScheduleService() {
+        /**
+         * broker 心跳扫描
+         */
         this.scanExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker,
             5, this.namesrvConfig.getScanNotActiveBrokerInterval(), TimeUnit.MILLISECONDS);
-
+        
+        /**
+         * 以固定频率打印 ConfigTable 中的参数
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically,
             1, 10, TimeUnit.MINUTES);
 
+        /**
+         *打印水平线，defaultThreadPoolQueue 队列的堆积情况
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 NamesrvController.this.printWaterMark();
@@ -129,6 +145,7 @@ public class NamesrvController {
         }, 10, 1, TimeUnit.SECONDS);
     }
 
+    //todo pengcheng:这里创建了NettyServer / NettyClient 客户端, 并没有启动
     private void initiateNetworkComponents() {
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
         this.remotingClient = new NettyRemotingClient(this.nettyClientConfig);
@@ -136,10 +153,16 @@ public class NamesrvController {
 
     private void initiateThreadExecutors() {
         this.defaultThreadPoolQueue = new LinkedBlockingQueue<>(this.namesrvConfig.getDefaultThreadPoolQueueCapacity());
-        this.defaultExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getDefaultThreadPoolNums(), this.namesrvConfig.getDefaultThreadPoolNums(), 1000 * 60, TimeUnit.MILLISECONDS, this.defaultThreadPoolQueue, new ThreadFactoryImpl("RemotingExecutorThread_"));
+        this.defaultExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getDefaultThreadPoolNums(),
+                this.namesrvConfig.getDefaultThreadPoolNums(),
+                1000 * 60, TimeUnit.MILLISECONDS,
+                this.defaultThreadPoolQueue, new ThreadFactoryImpl("RemotingExecutorThread_"));
 
         this.clientRequestThreadPoolQueue = new LinkedBlockingQueue<>(this.namesrvConfig.getClientRequestThreadPoolQueueCapacity());
-        this.clientRequestExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getClientRequestThreadPoolNums(), this.namesrvConfig.getClientRequestThreadPoolNums(), 1000 * 60, TimeUnit.MILLISECONDS, this.clientRequestThreadPoolQueue, new ThreadFactoryImpl("ClientRequestExecutorThread_"));
+        this.clientRequestExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getClientRequestThreadPoolNums(),
+                this.namesrvConfig.getClientRequestThreadPoolNums(),
+                1000 * 60, TimeUnit.MILLISECONDS,
+                this.clientRequestThreadPoolQueue, new ThreadFactoryImpl("ClientRequestExecutorThread_"));
     }
 
     private void initiateSslContext() {
@@ -149,6 +172,9 @@ public class NamesrvController {
 
         String[] watchFiles = {TlsSystemConfig.tlsServerCertPath, TlsSystemConfig.tlsServerKeyPath, TlsSystemConfig.tlsServerTrustCertPath};
 
+        /**
+         * todo 一个线程循环，计算文件md5有没有发生变化，如果变化则发送改变通知消息
+         */
         FileWatchService.Listener listener = new FileWatchService.Listener() {
             boolean certChanged, keyChanged = false;
 
@@ -180,7 +206,10 @@ public class NamesrvController {
     }
 
     private void printWaterMark() {
-        WATER_MARK_LOG.info("[WATERMARK] ClientQueueSize:{} ClientQueueSlowTime:{} " + "DefaultQueueSize:{} DefaultQueueSlowTime:{}", this.clientRequestThreadPoolQueue.size(), headSlowTimeMills(this.clientRequestThreadPoolQueue), this.defaultThreadPoolQueue.size(), headSlowTimeMills(this.defaultThreadPoolQueue));
+        WATER_MARK_LOG.info("[WATERMARK] ClientQueueSize:{} ClientQueueSlowTime:{} " + "DefaultQueueSize:{} DefaultQueueSlowTime:{}", this.clientRequestThreadPoolQueue.size(),
+                headSlowTimeMills(this.clientRequestThreadPoolQueue),
+                this.defaultThreadPoolQueue.size(),
+                headSlowTimeMills(this.defaultThreadPoolQueue));
     }
 
     private long headSlowTimeMills(BlockingQueue<Runnable> q) {
@@ -206,6 +235,7 @@ public class NamesrvController {
 
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()), this.defaultExecutor);
         } else {
+
             // Support get route info only temporarily
             ClientRequestProcessor clientRequestProcessor = new ClientRequestProcessor(this);
             this.remotingServer.registerProcessor(RequestCode.GET_ROUTEINFO_BY_TOPIC, clientRequestProcessor, this.clientRequestExecutor);
@@ -219,6 +249,7 @@ public class NamesrvController {
     }
 
     public void start() throws Exception {
+        // todo 启动netty服务端
         this.remotingServer.start();
 
         // In test scenarios where it is up to OS to pick up an available port, set the listening port back to config
@@ -226,10 +257,14 @@ public class NamesrvController {
             nettyServerConfig.setListenPort(this.remotingServer.localListenPort());
         }
 
+        // todo 这里会启动把 namesrv 地址塞给 netty Client 去连接
         this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtil.getLocalAddress()
             + ":" + nettyServerConfig.getListenPort()));
+
+        // todo 启动netty客户端
         this.remotingClient.start();
 
+        // todo 启动线程
         if (this.fileWatchService != null) {
             this.fileWatchService.start();
         }

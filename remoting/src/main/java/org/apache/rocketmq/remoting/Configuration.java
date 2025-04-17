@@ -107,6 +107,7 @@ public class Configuration {
             readWriteLock.writeLock().lockInterruptibly();
 
             try {
+                // extConfig 配置覆盖默认的配置
                 merge(extProperties, this.allConfigs);
             } finally {
                 readWriteLock.writeLock().unlock();
