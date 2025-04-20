@@ -107,7 +107,7 @@ public class NamesrvController {
         initiateThreadExecutors();
         // 注册一些Netty请求处理器，不知道这些处理器具体有什么用
         registerProcessor();
-        // 启动定时任务，具体任务内容？
+        // todo 启动定时任务: broker 心跳扫描
         startScheduleService();
         // SSL文件路径，监听SSL是否发生变化
         initiateSslContext();
@@ -119,6 +119,7 @@ public class NamesrvController {
     private void loadConfig() {
         this.kvConfigManager.load();
     }
+
 
     private void startScheduleService() {
         /**
