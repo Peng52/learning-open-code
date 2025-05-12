@@ -27,6 +27,9 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 public interface RemotingServer extends RemotingService {
 
+    /**
+     * todo 重点中重点： 这里可以看出来 有哪些消息处理器 Netty Client / Server
+     */
     void registerProcessor(final int requestCode, final NettyRequestProcessor processor,
         final ExecutorService executor);
 

@@ -555,6 +555,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 if (left <= 0) {
                     throw new RemotingTimeoutException("invokeSync call the addr[" + channelRemoteAddr + "] timeout");
                 }
+                // todo NettyClient 发起请求
                 RemotingCommand response = this.invokeSyncImpl(channel, request, left);
                 updateChannelLastResponseTime(addr);
                 return response;

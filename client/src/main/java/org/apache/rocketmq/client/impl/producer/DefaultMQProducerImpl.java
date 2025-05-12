@@ -110,6 +110,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     protected BlockingQueue<Runnable> checkRequestQueue;
     protected ExecutorService checkExecutor;
     private ServiceState serviceState = ServiceState.CREATE_JUST;
+    /**
+     * todo MQClient就是封装了 NettyClient 通讯相关的
+     */
     private MQClientInstance mQClientFactory;
     private ArrayList<CheckForbiddenHook> checkForbiddenHookList = new ArrayList<>();
     private MQFaultStrategy mqFaultStrategy;
@@ -127,6 +130,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.defaultMQProducer = defaultMQProducer;
         this.rpcHook = rpcHook;
 
+        // 创建了异步线程池
         this.asyncSenderThreadPoolQueue = new LinkedBlockingQueue<>(50000);
         this.defaultAsyncSenderExecutor = new ThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors(),
@@ -135,7 +139,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             TimeUnit.MILLISECONDS,
             this.asyncSenderThreadPoolQueue,
             new ThreadFactoryImpl("AsyncSenderExecutor_"));
+
         if (defaultMQProducer.getBackPressureForAsyncSendNum() > 10) {
+            // todo 这里提到了背压，难道是用Semaphore实现的
             semaphoreAsyncSendNum = new Semaphore(Math.max(defaultMQProducer.getBackPressureForAsyncSendNum(), 10), true);
         } else {
             semaphoreAsyncSendNum = new Semaphore(10, true);
@@ -143,12 +149,14 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         if (defaultMQProducer.getBackPressureForAsyncSendSize() > 1024 * 1024) {
+            // todo 背压？
             semaphoreAsyncSendSize = new Semaphore(Math.max(defaultMQProducer.getBackPressureForAsyncSendSize(), 1024 * 1024), true);
         } else {
             semaphoreAsyncSendSize = new Semaphore(1024 * 1024, true);
             log.info("semaphoreAsyncSendSize can not be smaller than 1M.");
         }
 
+        // 用于检测 RocketMQ 服务可用性 ; 主要用于验证某个端点(endpoint)是否是可用的 RocketMQ 服务
         ServiceDetector serviceDetector = new ServiceDetector() {
             @Override
             public boolean detect(String endpoint, long timeoutMillis) {
@@ -167,6 +175,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }
         };
 
+        /**
+         * 负责消息发送故障转移策略的核心组件：
+         * 1. 根据Broker的延迟和可用性计算优先级，实现sendLatencyFaultEnable机制（故障规避）
+         * 2. Broker选择逻辑：维护Broker的故障信息（FaultItem），选择最优Broker进行消息发送
+         * 3. 健康检测集成: 使用传入的serviceDetector验证Broker可用性,结合Resolver获取的地址进行综合判断
+         */
         this.mqFaultStrategy = new MQFaultStrategy(defaultMQProducer.cloneClientConfig(), new Resolver() {
             @Override
             public String resolve(String name) {
@@ -174,6 +188,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }
         }, serviceDetector);
     }
+
+
     private Optional<String> pickTopic() {
         if (topicPublishInfoTable.isEmpty()) {
             return Optional.empty();
@@ -237,6 +253,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.start(true);
     }
 
+    /**
+     * todo MQProducer 开始方法
+     */
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
@@ -248,9 +267,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
+                // todo 创建 MQ Client
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
+
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
                     throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
@@ -259,6 +280,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
 
                 if (startFactory) {
+                    // todo 重点:  开始启动 MQClient
                     mQClientFactory.start();
                 }
 
@@ -281,6 +303,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 break;
         }
 
+        // todo 这里是向所有broker发送心跳
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
 
         RequestFutureHolder.getInstance().startScheduledTask(this);
@@ -730,6 +753,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     }
 
+    /**
+     * todo 生产者 发送消息
+     */
     private SendResult sendDefaultImpl(
         Message msg,
         final CommunicationMode communicationMode,
@@ -772,7 +798,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             callTimeout = true;
                             break;
                         }
-
+                        // todo 发送消息
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
@@ -897,6 +923,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
     }
 
+    /**
+     * todo 发送消息
+     */
     private SendResult sendKernelImpl(final Message msg,
         final MessageQueue mq,
         final CommunicationMode communicationMode,
@@ -1029,6 +1058,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         if (timeout < costTimeAsync) {
                             throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
                         }
+                        /**
+                         * todo 这里是发送消息？
+                         */
                         sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
                             brokerAddr,
                             brokerName,
@@ -1049,6 +1081,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         if (timeout < costTimeSync) {
                             throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
                         }
+                        /**
+                         * todo 这里是发送消息
+                         */
                         sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
                             brokerAddr,
                             brokerName,
@@ -1559,6 +1594,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.asyncSenderExecutor = asyncSenderExecutor;
     }
 
+    /**
+     * todo 发送消息入口
+     */
     public SendResult send(Message msg,
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);

@@ -258,7 +258,10 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
     static {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
     }
-
+    
+    /**
+     * todo RemotingClient 就是 NettyClient 接口定义 ; 实现类就是  NettyRemotingClient
+     */
     private final RemotingClient remotingClient;
     private final TopAddressing topAddressing;
     private final ClientRemotingProcessor clientRemotingProcessor;
@@ -312,7 +315,9 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
 
     public String fetchNameServerAddr() {
         try {
+            // todo
             String addrs = this.topAddressing.fetchNSAddr();
+
             if (!UtilAll.isBlank(addrs)) {
                 if (!addrs.equals(this.nameSrvAddr)) {
                     log.info("name server address changed, old=" + this.nameSrvAddr + ", new=" + addrs);
@@ -2032,7 +2037,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
 
     public TopicRouteData getDefaultTopicRouteInfoFromNameServer(final long timeoutMillis)
         throws RemotingException, MQClientException, InterruptedException {
-
+        //todo pengcheng: 这里
         return getTopicRouteInfoFromNameServer(TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC, timeoutMillis, false);
     }
 
@@ -2041,13 +2046,20 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
+
+    /**
+     * todo Topic 路由信息 从 nameServer 中获取
+     */
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
+
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINFO_BY_TOPIC, requestHeader);
 
+        // todo NettyClient 发起请求的地方 ，向 NameServer 发起请求
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
+
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.TOPIC_NOT_EXIST: {

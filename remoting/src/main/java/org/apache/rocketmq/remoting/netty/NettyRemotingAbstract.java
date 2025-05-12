@@ -170,7 +170,7 @@ public abstract class NettyRemotingAbstract {
      * <li>A response to a previous request issued by this very participant.</li>
      * </ul>
      * </p>
-     *
+     *  todo 这里不管是 Client 端， Server 端 都是这里统一的消息分发期
      * @param ctx Channel handler context.
      * @param msg incoming remoting command.
      */
@@ -181,6 +181,7 @@ public abstract class NettyRemotingAbstract {
                     processRequestCommand(ctx, msg);
                     break;
                 case RESPONSE_COMMAND:
+                    // todo 收到响应消息
                     processResponseCommand(ctx, msg);
                     break;
                 default:
@@ -270,6 +271,8 @@ public abstract class NettyRemotingAbstract {
             return;
         }
 
+
+        // 创建发送请求
         Runnable run = buildProcessRequestHandler(ctx, cmd, pair, opaque);
 
         if (isShuttingDown.get()) {
@@ -292,6 +295,10 @@ public abstract class NettyRemotingAbstract {
         }
 
         try {
+
+            /**
+             * todo 发送消息时候 也是 包装成 Runnable Task 线程池去发送的。
+             */
             final RequestTask requestTask = new RequestTask(run, ctx.channel(), cmd);
             //async execute task, current thread return directly
             pair.getObject2().submit(requestTask);
@@ -324,6 +331,7 @@ public abstract class NettyRemotingAbstract {
             try {
                 String remoteAddr = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
                 try {
+                    // 前置拦截(也是for循环所有的RpcHook实现类)
                     doBeforeRpcHooks(remoteAddr, cmd);
                 } catch (AbortProcessException e) {
                     throw e;
@@ -331,6 +339,7 @@ public abstract class NettyRemotingAbstract {
                     exception = e;
                 }
 
+                // todo 这里是链式调用，有点东西哦。学习下
                 if (this.requestPipeline != null) {
                     this.requestPipeline.execute(ctx, cmd);
                 }
@@ -342,7 +351,10 @@ public abstract class NettyRemotingAbstract {
                 }
 
                 try {
+
+                    // 请求后置处理器
                     doAfterRpcHooks(remoteAddr, cmd, response);
+
                 } catch (AbortProcessException e) {
                     throw e;
                 } catch (Exception e) {
@@ -353,7 +365,11 @@ public abstract class NettyRemotingAbstract {
                     throw exception;
                 }
 
+
+                // todo 调用Netty Channel 发送消息
                 writeResponse(ctx.channel(), cmd, response);
+
+
             } catch (AbortProcessException e) {
                 response = RemotingCommand.createResponseCommand(e.getResponseCode(), e.getErrorMessage());
                 response.setOpaque(opaque);
@@ -377,6 +393,7 @@ public abstract class NettyRemotingAbstract {
      *
      * @param ctx channel handler context.
      * @param cmd response command instance.
+     * todo 这里的 是收到响应，处理响应。 通过 ResponseFuture, 来统一封装响应结果
      */
     public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd) {
         final int opaque = cmd.getOpaque();
@@ -387,7 +404,9 @@ public abstract class NettyRemotingAbstract {
             responseTable.remove(opaque);
 
             if (responseFuture.getInvokeCallback() != null) {
+                // todo 执行 invokeCallback() 回调方法
                 executeInvokeCallback(responseFuture);
+
             } else {
                 responseFuture.putResponse(cmd);
                 responseFuture.release();
@@ -405,6 +424,7 @@ public abstract class NettyRemotingAbstract {
         ExecutorService executor = this.getCallbackExecutor();
         if (executor != null && !executor.isShutdown()) {
             try {
+                // todo 异步线程执行 callback 方法
                 executor.submit(() -> {
                     try {
                         responseFuture.executeInvokeCallback();
@@ -497,8 +517,10 @@ public abstract class NettyRemotingAbstract {
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
         try {
+            // todo NettyClient 发起请求的
             return invokeImpl(channel, request, timeoutMillis).thenApply(ResponseFuture::getResponseCommand)
                 .get(timeoutMillis, TimeUnit.MILLISECONDS);
+
         } catch (ExecutionException e) {
             throw new RemotingSendRequestException(channel.remoteAddress().toString(), e.getCause());
         } catch (TimeoutException e) {
@@ -508,9 +530,13 @@ public abstract class NettyRemotingAbstract {
 
     public CompletableFuture<ResponseFuture> invokeImpl(final Channel channel, final RemotingCommand request,
         final long timeoutMillis) {
+        // todo Netty发起请求
         return invoke0(channel, request, timeoutMillis);
     }
 
+    /**
+     * Netty发起请求
+     */
     protected CompletableFuture<ResponseFuture> invoke0(final Channel channel, final RemotingCommand request,
         final long timeoutMillis) {
         CompletableFuture<ResponseFuture> future = new CompletableFuture<>();
@@ -519,6 +545,7 @@ public abstract class NettyRemotingAbstract {
 
         boolean acquired;
         try {
+            // todo 通过信号量 控制发送消息的频率
             acquired = this.semaphoreAsync.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
             future.completeExceptionally(t);
@@ -554,8 +581,11 @@ public abstract class NettyRemotingAbstract {
             responseFutureReference.set(responseFuture);
             this.responseTable.put(opaque, responseFuture);
             try {
+
+                // todo Netty 发送消息
                 channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
                     if (f.isSuccess()) {
+                        // 是否发送成功也记录了下。
                         responseFuture.setSendRequestOK(true);
                         return;
                     }
@@ -572,6 +602,9 @@ public abstract class NettyRemotingAbstract {
             }
         } else {
             if (timeoutMillis <= 0) {
+                /**
+                 * 这里还有发送过快的异常提醒。 处理
+                 */
                 future.completeExceptionally(new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast"));
             } else {
                 String info =

@@ -65,6 +65,16 @@ public class MQClientManager {
 
         return instance;
     }
+
+    /**
+     * ProduceAccumulator 是 RocketMQ 中用于消息生产累积统计的核心组件，主要职责是收集和统计生产者客户端的消息发送数据。
+     * 1. 消息统计维度
+     * 成功/失败计数：记录发送成功和失败的消息数量
+     * 耗时统计：记录不同耗时区间的消息数量
+     * TPS计算：基于时间窗口计算消息发送速率
+     * 异常统计：按异常类型分类统计失败情况
+     * todo 看看别人怎么做消息 收发消息统计的  监控
+     */
     public ProduceAccumulator getOrCreateProduceAccumulator(final ClientConfig clientConfig) {
         String clientId = clientConfig.buildMQClientId();
         ProduceAccumulator accumulator = this.accumulatorTable.get(clientId);

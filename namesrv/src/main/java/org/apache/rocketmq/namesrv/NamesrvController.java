@@ -236,7 +236,10 @@ public class NamesrvController {
 
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()), this.defaultExecutor);
         } else {
-
+            
+            /**
+             * todo 这里 namesrv 注册了获取 Topic 路由 处理器
+             */
             // Support get route info only temporarily
             ClientRequestProcessor clientRequestProcessor = new ClientRequestProcessor(this);
             this.remotingServer.registerProcessor(RequestCode.GET_ROUTEINFO_BY_TOPIC, clientRequestProcessor, this.clientRequestExecutor);

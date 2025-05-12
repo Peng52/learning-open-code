@@ -287,12 +287,15 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     public DefaultMQProducer(final String producerGroup, RPCHook rpcHook, final List<String> topics,
         boolean enableMsgTrace, final String customizedTraceTopic) {
+        // todo 入口 创建 MQ Producer 生产者
         this.producerGroup = producerGroup;
         this.rpcHook = rpcHook;
         this.topics = topics;
         this.enableTrace = enableMsgTrace;
         this.traceTopic = customizedTraceTopic;
+        // todo new 对象中做了初始化
         defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
+        // todo
         produceAccumulator = MQClientManager.getInstance().getOrCreateProduceAccumulator(this);
     }
 
@@ -353,8 +356,13 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     @Override
     public void start() throws MQClientException {
+        // todo 生产者启动
         this.setProducerGroup(withNamespace(this.producerGroup));
+
+
+        // todo 核心启动方法：内部会初始化网络客户端、定时任务等核心组件； 最后启动 nettyClient
         this.defaultMQProducerImpl.start();
+
         if (this.produceAccumulator != null) {
             this.produceAccumulator.start();
         }
@@ -472,6 +480,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     public SendResult send(Message msg,
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         msg.setTopic(withNamespace(msg.getTopic()));
+        //todo 入口
         return this.defaultMQProducerImpl.send(msg, timeout);
     }
 

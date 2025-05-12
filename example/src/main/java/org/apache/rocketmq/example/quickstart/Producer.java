@@ -22,6 +22,8 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * This class demonstrates how to send messages to brokers using provided {@link DefaultMQProducer}.
  */
@@ -40,6 +42,7 @@ public class Producer {
 
         /*
          * Instantiate with a producer group name.
+         * todo 这里做了很多的初始化工作
          */
         DefaultMQProducer producer = new DefaultMQProducer(PRODUCER_GROUP);
 
@@ -58,8 +61,11 @@ public class Producer {
 
         /*
          * Launch the instance.
+         * todo 启动生产者对象
          */
         producer.start();
+
+        //TimeUnit.SECONDS.sleep(100000000);
 
         for (int i = 0; i < MESSAGE_COUNT; i++) {
             try {
@@ -74,6 +80,7 @@ public class Producer {
 
                 /*
                  * Call send message to deliver message to one of brokers.
+                 * todo 发送消息
                  */
                 SendResult sendResult = producer.send(msg, 20 * 1000);
                 /*

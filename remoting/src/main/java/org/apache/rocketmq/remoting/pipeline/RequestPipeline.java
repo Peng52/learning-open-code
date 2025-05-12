@@ -20,6 +20,9 @@ package org.apache.rocketmq.remoting.pipeline;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+/**
+ * todo 学习这里的链式调用  有点东西哦，
+ */
 public interface RequestPipeline {
 
     void execute(ChannelHandlerContext ctx, RemotingCommand request) throws Exception;

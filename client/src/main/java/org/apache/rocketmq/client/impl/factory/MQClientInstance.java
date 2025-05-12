@@ -110,6 +110,9 @@ public class MQClientInstance {
      */
     private final ConcurrentMap<String, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<>();
     private final NettyClientConfig nettyClientConfig;
+    /**
+     * todo 对 NettyClient 的封装
+     */
     private final MQClientAPIImpl mQClientAPIImpl;
     private final MQAdminImpl mQAdminImpl;
     private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<>();
@@ -145,6 +148,19 @@ public class MQClientInstance {
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId) {
         this(clientConfig, instanceIndex, clientId, null);
     }
+
+    /**
+     * 核心职责
+     * 1.网络通信管理：
+     * 维护与 Broker 的网络连接
+     * 管理 RemotingClient 实例
+     * 2.服务协调：
+     * 处理定时心跳
+     * 管理主题路由信息
+     * 3.资源整合：
+     * 整合生产者、消费者资源
+     * 管理线程池等共享资源
+     */
 
     public MQClientInstance(ClientConfig clientConfig, int instanceIndex, String clientId, RPCHook rpcHook) {
         this.clientConfig = clientConfig;
@@ -298,6 +314,10 @@ public class MQClientInstance {
         return mqList;
     }
 
+    
+    /**
+     * todo MQ Client Instance 启动方法
+     */
     public void start() throws MQClientException {
 
         synchronized (this) {
@@ -308,9 +328,12 @@ public class MQClientInstance {
                     if (null == this.clientConfig.getNamesrvAddr()) {
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
+
+                    //todo 启动 NettyClient
                     // Start request-response channel
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
+                    // todo 启动定时任务，从namesvr 中拉取消息
                     this.startScheduledTask();
                     // Start pull service
                     this.pullMessageService.start();
@@ -329,7 +352,12 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * todo 重点 : 定时任务
+     */
     private void startScheduledTask() {
+
+        // 动态获取 NameServer 地址
         if (null == this.clientConfig.getNamesrvAddr()) {
             this.scheduledExecutorService.scheduleAtFixedRate(() -> {
                 try {
@@ -340,6 +368,7 @@ public class MQClientInstance {
             }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
         }
 
+        // 从 NameServer 拉取最新路由信息
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.updateTopicRouteInfoFromNameServer();
@@ -348,6 +377,7 @@ public class MQClientInstance {
             }
         }, 10, this.clientConfig.getPollNameServerInterval(), TimeUnit.MILLISECONDS);
 
+        // 发送心跳 & 清理离线 Broker
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.cleanOfflineBroker();
@@ -357,6 +387,7 @@ public class MQClientInstance {
             }
         }, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
+        // 消费进度持久化：持久化消费者 offset
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.persistAllConsumerOffset();
@@ -365,6 +396,7 @@ public class MQClientInstance {
             }
         }, 1000 * 10, this.clientConfig.getPersistConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
+        // 线程池调整:  动态调整线程池大小
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.adjustThreadPool();
@@ -407,6 +439,7 @@ public class MQClientInstance {
             }
         }
 
+        // todo  执行更新 Topic 路由信息 的入口
         for (String topic : topicList) {
             this.updateTopicRouteInfoFromNameServer(topic);
         }
@@ -571,6 +604,7 @@ public class MQClientInstance {
     }
 
     public boolean updateTopicRouteInfoFromNameServer(final String topic) {
+        // todo 更新路由信息
         return updateTopicRouteInfoFromNameServer(topic, false, null);
     }
 
@@ -763,14 +797,21 @@ public class MQClientInstance {
         return true;
     }
 
+    /**
+     *         // todo 更新路由信息 ,  从 NameServer
+     */
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
         DefaultMQProducer defaultMQProducer) {
         try {
+            // private final Lock lockNamesrv = new ReentrantLock();
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
                     if (isDefault && defaultMQProducer != null) {
+                        
+                        //todo pengcheng:
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(clientConfig.getMqClientApiTimeout());
+
                         if (topicRouteData != null) {
                             for (QueueData data : topicRouteData.getQueueDatas()) {
                                 int queueNums = Math.min(defaultMQProducer.getDefaultTopicQueueNums(), data.getReadQueueNums());
@@ -845,6 +886,7 @@ public class MQClientInstance {
                     this.lockNamesrv.unlock();
                 }
             } else {
+                // todo 加锁失败
                 log.warn("updateTopicRouteInfoFromNameServer tryLock timeout {}ms. [{}]", LOCK_TIMEOUT_MILLIS, this.clientId);
             }
         } catch (InterruptedException e) {

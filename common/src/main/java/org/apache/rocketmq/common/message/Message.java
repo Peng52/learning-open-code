@@ -38,6 +38,15 @@ public class Message implements Serializable {
         this(topic, "", "", 0, body, true);
     }
 
+    /**
+     * topic	String	消息所属主题（必填）	必须非空
+     * tags	    String	消息标签（用于消费者过滤）	可为空，支持多标签（空格分隔）
+     * keys	    String	消息业务关键字（用于查询和追踪）	可为空，支持多Key（空格分隔）
+     * flag	    int	    消息标志位（二进制组合，控制消息特性）	通常为0
+     * body	    byte[]	消息内容（实际负载数据）	可为空
+     * waitStoreMsgOK	boolean	是否等待消息存储完成（同步刷盘场景下确保可靠性）	默认true
+     * todo 这里的消息标志位 可以研究下。
+     */
     public Message(String topic, String tags, String keys, int flag, byte[] body, boolean waitStoreMsgOK) {
         this.topic = topic;
         this.flag = flag;

@@ -59,21 +59,28 @@ public class ResponseFuture {
         this.once = once;
     }
 
+    /**
+     * todo ResponseFuture 中有封装了回调方法
+     */
     public void executeInvokeCallback() {
         if (invokeCallback != null) {
             if (this.executeCallbackOnlyOnce.compareAndSet(false, true)) {
                 RemotingCommand response = getResponseCommand();
                 if (response != null) {
+                    //todo 成功
                     invokeCallback.operationSucceed(response);
                 } else {
                     if (!isSendRequestOK()) {
+                        // 失败
                         invokeCallback.operationFail(new RemotingSendRequestException(channel.remoteAddress().toString(), getCause()));
                     } else if (isTimeout()) {
+                        // 超时
                         invokeCallback.operationFail(new RemotingTimeoutException(channel.remoteAddress().toString(), getTimeoutMillis(), getCause()));
                     } else {
                         invokeCallback.operationFail(new RemotingException(getRequestCommand().toString(), getCause()));
                     }
                 }
+                //
                 invokeCallback.operationComplete(this);
             }
         }

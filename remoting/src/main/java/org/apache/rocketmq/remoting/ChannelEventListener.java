@@ -18,6 +18,10 @@ package org.apache.rocketmq.remoting;
 
 import io.netty.channel.Channel;
 
+
+/**
+ * todo 这里就相当于 就是将 Netty Handler 事件都分发下去
+ */
 public interface ChannelEventListener {
     void onChannelConnect(final String remoteAddr, final Channel channel);
 
