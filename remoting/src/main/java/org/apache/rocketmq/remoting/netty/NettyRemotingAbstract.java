@@ -173,6 +173,7 @@ public abstract class NettyRemotingAbstract {
      *  todo 这里不管是 Client 端， Server 端 都是这里统一的消息分发期
      * @param ctx Channel handler context.
      * @param msg incoming remoting command.
+     *  todo netty read0 方法调用这里
      */
     public void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg) {
         if (msg != null) {
@@ -397,6 +398,7 @@ public abstract class NettyRemotingAbstract {
      */
     public void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd) {
         final int opaque = cmd.getOpaque();
+        // 把请求从缓存中取出来
         final ResponseFuture responseFuture = responseTable.get(opaque);
         if (responseFuture != null) {
             responseFuture.setResponseCommand(cmd);
@@ -589,6 +591,7 @@ public abstract class NettyRemotingAbstract {
                         responseFuture.setSendRequestOK(true);
                         return;
                     }
+                    // 如果失败，直接处理失败情况
                     requestFail(opaque);
                     log.warn("send a request command to channel <{}>, channelId={}, failed.", RemotingHelper.parseChannelRemoteAddr(channel), channel.id());
                 });

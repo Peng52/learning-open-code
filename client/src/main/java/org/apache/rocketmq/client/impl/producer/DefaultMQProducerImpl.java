@@ -774,6 +774,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             MessageQueue mq = null;
             Exception exception = null;
             SendResult sendResult = null;
+            // todo 消息重试
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
             int times = 0;
             String[] brokersSent = new String[timesTotal];
@@ -932,6 +933,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final SendCallback sendCallback,
         final TopicPublishInfo topicPublishInfo,
         final long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+
+        //todo pengcheng:待删除 发送消息
         long beginStartTime = System.currentTimeMillis();
         String brokerName = this.mQClientFactory.getBrokerNameFromMessageQueue(mq);
         String brokerAddr = this.mQClientFactory.findBrokerAddressInPublish(brokerName);
@@ -1729,6 +1732,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             RequestFutureHolder.getInstance().getRequestFutureTable().put(correlationId, requestResponseFuture);
 
             long cost = System.currentTimeMillis() - beginTimestamp;
+
+            //todo 这里是发送的核心方法入口，msg:发送的消息，mq队列，异步方法、sendCallback 回调处理方法
             this.sendKernelImpl(msg, mq, CommunicationMode.ASYNC, new SendCallback() {
                 @Override
                 public void onSuccess(SendResult sendResult) {
@@ -1745,6 +1750,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }, null, timeout - cost);
 
             return waitResponse(msg, timeout, requestResponseFuture, cost);
+
+
         } finally {
             RequestFutureHolder.getInstance().getRequestFutureTable().remove(correlationId);
         }
