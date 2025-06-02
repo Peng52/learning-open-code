@@ -639,6 +639,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
                 if (timeoutMillis < costTimeAsync) {
                     throw new RemotingTooMuchRequestException("sendMessage call timeout");
                 }
+                // todo 发送  异步消息
                 this.sendMessageAsync(addr, brokerName, msg, timeoutMillis - costTimeAsync, request, sendCallback, topicPublishInfo, instance,
                     retryTimesWhenSendFailed, times, context, producer);
                 return null;
@@ -647,6 +648,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
                 if (timeoutMillis < costTimeSync) {
                     throw new RemotingTooMuchRequestException("sendMessage call timeout");
                 }
+                //todo pengcheng: 发送  同步方法
                 return this.sendMessageSync(addr, brokerName, msg, timeoutMillis - costTimeSync, request);
             default:
                 assert false;
@@ -676,6 +678,9 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         }
     }
 
+    /**
+     * 发送同步方法
+     */
     private void sendMessageAsync(
         final String addr,
         final String brokerName,
@@ -692,6 +697,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
     ) {
         final long beginStartTime = System.currentTimeMillis();
         try {
+            //todo pengcheng: 发送异步消息
             this.remotingClient.invokeAsync(addr, request, timeoutMillis, new InvokeCallback() {
                 @Override
                 public void operationComplete(ResponseFuture responseFuture) {

@@ -625,6 +625,7 @@ public abstract class NettyRemotingAbstract {
 
     public void invokeAsyncImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis,
         final InvokeCallback invokeCallback) {
+        //todo pengcheng: 发送消息
         invokeImpl(channel, request, timeoutMillis)
             .whenComplete((v, t) -> {
                 if (t == null) {

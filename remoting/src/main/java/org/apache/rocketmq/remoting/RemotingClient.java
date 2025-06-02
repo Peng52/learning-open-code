@@ -35,14 +35,23 @@ public interface RemotingClient extends RemotingService {
 
     List<String> getAvailableNameSrvList();
 
+    /**
+     * 发送 同步消息  接口定义
+     */
     RemotingCommand invokeSync(final String addr, final RemotingCommand request,
         final long timeoutMillis) throws InterruptedException, RemotingConnectException,
         RemotingSendRequestException, RemotingTimeoutException;
 
+    /**
+     * 发送异步消息 接口定义
+     */
     void invokeAsync(final String addr, final RemotingCommand request, final long timeoutMillis,
         final InvokeCallback invokeCallback) throws InterruptedException, RemotingConnectException,
         RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException;
 
+    /**
+     * 发送 OneWay 消息 接口定义
+     */
     void invokeOneway(final String addr, final RemotingCommand request, final long timeoutMillis)
         throws InterruptedException, RemotingConnectException, RemotingTooMuchRequestException,
         RemotingTimeoutException, RemotingSendRequestException;

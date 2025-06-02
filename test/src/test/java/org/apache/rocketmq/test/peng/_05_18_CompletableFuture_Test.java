@@ -150,6 +150,13 @@ public class _05_18_CompletableFuture_Test {
 
 
     public static class User {
+        public User(String userId, String username) {
+            this.userId = userId;
+            this.username = username;
+        }
+
+        public User() {
+        }
 
         private String userId;
         private String username;
@@ -230,10 +237,78 @@ public class _05_18_CompletableFuture_Test {
 
     /**
      * Stream zip
+     * 1. thenApply().whenComplete().exceptionally().thenAccept()
+     * 2. 上面的构成链都是顺序执行的，并不是执行链中最后的thenAccept(), 才执行whenComplete()
+     * 3. 也并不是链条上的任意位置发生异常都会执行exceptionally()方法，只有exceptionally前面的方法报错才会执行
      */
     @Test
-    public void test() {
+    public void test() throws ExecutionException, InterruptedException {
+        CompletableFuture<User> completableFuture = CompletableFuture.supplyAsync(() -> new User("111", "2222"));
+
+        completableFuture.thenApply(user -> {
+            System.out.println("thenApply: {}" + user);
+            user.setUsername("2222-thenApply");
+            if (true) {
+                //int a = 1 / 0;
+            }
+            return user;
+        }).whenComplete((r, e) -> {
+            System.out.println("complete 执行: " + r);
+            r.setUsername("complete");
+        }).exceptionally(ex -> {
+            System.out.println("333 发生了异常");
+            User user = new User("ex-3333", "ex-33333");
+            return user;
+        }).thenAccept(user -> {
+            System.out.println("执行到 thenAccept");
+            if (true) {
+                int a = 1 / 0;
+            }
+            System.out.println("thenAccept 执行 user:{}" + user);
+        });
+
+        User user = completableFuture.get();
+        System.out.println("result " + user);
+
+        sleep(1000);
+
     }
+
+
+    /**
+     * CompletableFuture 是否会触发whenComplete()的执行
+     */
+    @Test
+    public void testWheComplete() {
+        // 由前一个阶段触发
+        CompletableFuture<User> completableFuture = buildCompletableFuture();
+        completableFuture.whenComplete((user, throwable) -> {
+            System.out.println("whenComplete 执行了: " + user);
+        });
+
+        System.out.println("");
+        System.out.println("");
+        System.out.println("");
+        // 手动触发
+        CompletableFuture<User> completableFuture1 = new CompletableFuture<>();
+
+        // 注掉这行 不会触发whenComplete()执行
+        //completableFuture1.complete(new User("1111", "111111"));
+        // 这里就不会执行 ;
+        completableFuture1.completeExceptionally(new RuntimeException("异常"));
+
+        completableFuture1.whenComplete((user, throwable) -> {
+            System.out.println("执行了whenComplete:" + user + throwable);
+        });
+
+        sleep(10000000);
+    }
+
+
+    private CompletableFuture<User> buildCompletableFuture() {
+        return CompletableFuture.supplyAsync(() -> new User("111", "2222"));
+    }
+
 
     private void sleep(int seconds) {
         try {

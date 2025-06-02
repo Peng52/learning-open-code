@@ -217,7 +217,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()),
                         // todo netty 连接管理 (上线、下线、异常、idle等等)
                         new NettyConnectManageHandler(),
-                        // todo netty 消息处理器 (很简洁)
+                        // todo netty read0 消息处理器 (很简洁)
                         new NettyClientHandler());
                 }
             });
@@ -742,6 +742,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
             invokeCallback.operationFail(new RemotingConnectException(addr));
             return;
         }
+        // todo 不知道为啥这里 是通过 addListener 来发送消息
         channelFuture.addListener(future -> {
             if (future.isSuccess()) {
                 Channel channel = channelFuture.channel();
@@ -749,14 +750,18 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 if (channel != null && channel.isActive()) {
                     long costTime = System.currentTimeMillis() - beginStartTime;
                     if (timeoutMillis < costTime) {
+                        // 失败回调
                         invokeCallback.operationFail(new RemotingTooMuchRequestException("invokeAsync call the addr[" + channelRemoteAddr + "] timeout"));
                     }
+                    //todo pengcheng: 发送 异步消息
                     this.invokeAsyncImpl(channel, request, timeoutMillis - costTime, new InvokeCallbackWrapper(invokeCallback, addr));
                 } else {
                     this.closeChannel(addr, channel);
+                    // 失败回调
                     invokeCallback.operationFail(new RemotingConnectException(addr));
                 }
             } else {
+                // 失败回调
                 invokeCallback.operationFail(new RemotingConnectException(addr));
             }
         });
