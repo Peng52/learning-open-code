@@ -17,8 +17,15 @@
 
 package org.apache.rocketmq.remoting.protocol;
 
+
+/**
+ * todo 这个类就相当于 请求的 MsgType
+ */
 public class RequestCode {
 
+    /**
+     * todo 发送消息, 一般普通 Producer生产者发送消息就是这种
+     */
     public static final int SEND_MESSAGE = 10;
 
     public static final int PULL_MESSAGE = 11;

@@ -32,6 +32,9 @@ public class ResponseFuture {
     private final int opaque;
     private final RemotingCommand request;
     private final long timeoutMillis;
+    /**
+     * todo 回调接口
+     */
     private final InvokeCallback invokeCallback;
     private final long beginTimestamp = System.currentTimeMillis();
     private final CountDownLatch countDownLatch = new CountDownLatch(1);

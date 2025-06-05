@@ -179,6 +179,7 @@ public abstract class NettyRemotingAbstract {
         if (msg != null) {
             switch (msg.getType()) {
                 case REQUEST_COMMAND:
+                    //todo pengcheng: 处理请求的入口
                     processRequestCommand(ctx, msg);
                     break;
                 case RESPONSE_COMMAND:

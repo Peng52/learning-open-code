@@ -83,6 +83,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         super(brokerController);
     }
 
+    //todo pengcheng: 处理Producer生产者发送的消息
     @Override
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
@@ -116,6 +117,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                     response = this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
                         (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
                 } else {
+                    //todo pengcheng: 进一步处理消息
                     response = this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
                         (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
                 }
@@ -324,11 +326,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             if (sendTransactionPrepareMessage) {
                 asyncPutMessageFuture = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
             } else {
+                //todo pengcheng: 保存消息 commitLog
                 asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessage(msgInner);
             }
 
             final int finalQueueIdInt = queueIdInt;
             final MessageExtBrokerInner finalMsgInner = msgInner;
+            //todo pengcheng: 异步处理消息的结果
             asyncPutMessageFuture.thenAcceptAsync(putMessageResult -> {
                 RemotingCommand responseFuture =
                     handlePutMessageResult(putMessageResult, response, request, finalMsgInner, responseHeader, sendMessageContext,

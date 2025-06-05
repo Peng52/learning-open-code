@@ -34,6 +34,7 @@ public class NettyEncoder extends MessageToByteEncoder<RemotingCommand> {
     public void encode(ChannelHandlerContext ctx, RemotingCommand remotingCommand, ByteBuf out)
         throws Exception {
         try {
+            //todo pengcheng: 编码器
             remotingCommand.fastEncodeHeader(out);
             byte[] body = remotingCommand.getBody();
             if (body != null) {

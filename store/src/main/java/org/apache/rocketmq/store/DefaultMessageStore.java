@@ -599,6 +599,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         long beginTime = this.getSystemClock().now();
+        //todo pengcheng: 这里保存消息到文件中
         CompletableFuture<PutMessageResult> putResultFuture = this.commitLog.asyncPutMessage(msg);
 
         putResultFuture.thenAccept(result -> {
@@ -647,6 +648,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public PutMessageResult putMessage(MessageExtBrokerInner msg) {
+        // todo 保存消息
         return waitForPutResult(asyncPutMessage(msg));
     }
 

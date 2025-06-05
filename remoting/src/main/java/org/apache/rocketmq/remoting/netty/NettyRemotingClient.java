@@ -1156,7 +1156,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     /**
-     * netty Client 收到消息处理器
+     * todo Read0 netty Client 收到消息处理器
      */
     class NettyClientHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 

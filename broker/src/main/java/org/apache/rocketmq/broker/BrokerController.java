@@ -205,6 +205,9 @@ public class BrokerController {
     protected final PollingInfoProcessor pollingInfoProcessor;
     protected final QueryAssignmentProcessor queryAssignmentProcessor;
     protected final ClientManageProcessor clientManageProcessor;
+    /**
+     * todo 发送消息处理器
+     */
     protected final SendMessageProcessor sendMessageProcessor;
     protected final ReplyMessageProcessor replyMessageProcessor;
     protected final PullRequestHoldService pullRequestHoldService;
