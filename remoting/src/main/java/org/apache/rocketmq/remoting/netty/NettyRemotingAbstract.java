@@ -347,6 +347,7 @@ public abstract class NettyRemotingAbstract {
                 }
 
                 if (exception == null) {
+                    // todo 处理消息
                     response = pair.getObject1().processRequest(ctx, cmd);
                 } else {
                     response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR, null);
@@ -354,7 +355,7 @@ public abstract class NettyRemotingAbstract {
 
                 try {
 
-                    // 请求后置处理器
+                    // todo 请求后置处理器
                     doAfterRpcHooks(remoteAddr, cmd, response);
 
                 } catch (AbortProcessException e) {
@@ -368,7 +369,7 @@ public abstract class NettyRemotingAbstract {
                 }
 
 
-                // todo 调用Netty Channel 发送消息
+                // todo 调用Netty Channel 发送响应消息
                 writeResponse(ctx.channel(), cmd, response);
 
 

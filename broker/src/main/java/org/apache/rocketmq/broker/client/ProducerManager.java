@@ -172,6 +172,7 @@ public class ProducerManager {
             this.groupChannelTable.put(group, channelTable);
         }
 
+        // todo 存在则更新，不存在则 put
         clientChannelInfoFound = channelTable.get(clientChannelInfo.getChannel());
         if (null == clientChannelInfoFound) {
             channelTable.put(clientChannelInfo.getChannel(), clientChannelInfo);

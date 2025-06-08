@@ -719,6 +719,7 @@ public class MQClientInstance {
             boolean isBrokerSupportV2 = brokerSupportV2HeartbeatSet.contains(addr);
             HeartbeatV2Result heartbeatV2Result = null;
             if (isBrokerSupportV2 && null != brokerAddrHeartbeatFingerprintTable.get(addr) && brokerAddrHeartbeatFingerprintTable.get(addr) == currentHeartbeatFingerprint) {
+                //todo pengcheng: 发送心跳
                 heartbeatV2Result = this.mQClientAPIImpl.sendHeartbeatV2(addr, heartbeatDataWithoutSub, clientConfig.getMqClientApiTimeout());
                 if (heartbeatV2Result.isSubChange()) {
                     brokerAddrHeartbeatFingerprintTable.remove(addr);
@@ -791,6 +792,7 @@ public class MQClientInstance {
                 if (consumerEmpty && MixAll.MASTER_ID != id) {
                     continue;
                 }
+                //todo pengcheng: 发送心跳
                 sendHeartbeatToBrokerV2(id, brokerName, addr, heartbeatDataWithSub, heartbeatDataWithoutSub, currentHeartbeatFingerprint);
             }
         }

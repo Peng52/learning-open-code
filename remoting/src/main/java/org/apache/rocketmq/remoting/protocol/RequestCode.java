@@ -56,6 +56,7 @@ public class RequestCode {
 
     public static final int VIEW_MESSAGE_BY_ID = 33;
 
+    //todo pengcheng: 心跳枚举
     public static final int HEART_BEAT = 34;
 
     public static final int UNREGISTER_CLIENT = 35;

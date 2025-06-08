@@ -1063,7 +1063,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             throw new RemotingTooMuchRequestException("sendKernelImpl call timeout");
                         }
                         /**
-                         * todo 这里是发送消息？
+                         * todo 这里是发送消息
                          */
                         sendResult = this.mQClientFactory.getMQClientAPIImpl().sendMessage(
                             brokerAddr,
