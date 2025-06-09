@@ -288,6 +288,7 @@ public abstract class NettyRemotingAbstract {
             }
         }
 
+        // todo 是否拒绝请求
         if (pair.getObject1().rejectRequest()) {
             final RemotingCommand response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_BUSY,
                 "[REJECTREQUEST]system busy, start flow control for a while");
