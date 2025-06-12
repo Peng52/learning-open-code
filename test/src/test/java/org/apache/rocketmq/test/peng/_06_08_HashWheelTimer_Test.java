@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @author : pengcheng
  * @since : 2025-06-08
  */
-public class _06_08_Test {
+public class _06_08_HashWheelTimer_Test {
 
 
     /**
