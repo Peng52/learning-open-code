@@ -22,6 +22,9 @@ import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo.QueueFilter;
 import org.apache.rocketmq.common.message.MessageQueue;
 
+/**
+ * RocketMQ 客户端中负责  故障转移策略  的核心类
+ */
 public class MQFaultStrategy {
     private LatencyFaultTolerance<String> latencyFaultTolerance;
     private volatile boolean sendLatencyFaultEnable;
@@ -44,6 +47,7 @@ public class MQFaultStrategy {
         }
     }
 
+    // 创建 BrokerFilter 过滤broker
     private ThreadLocal<BrokerFilter> threadBrokerFilter = new ThreadLocal<BrokerFilter>() {
         @Override protected BrokerFilter initialValue() {
             return new BrokerFilter();
@@ -138,6 +142,7 @@ public class MQFaultStrategy {
         BrokerFilter brokerFilter = threadBrokerFilter.get();
         brokerFilter.setLastBrokerName(lastBrokerName);
         if (this.sendLatencyFaultEnable) {
+            // todo 开启了故障延迟机制
             if (resetIndex) {
                 tpInfo.resetIndex();
             }

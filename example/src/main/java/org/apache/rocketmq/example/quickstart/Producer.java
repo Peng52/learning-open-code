@@ -18,10 +18,14 @@ package org.apache.rocketmq.example.quickstart;
 
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -82,7 +86,28 @@ public class Producer {
                  * Call send message to deliver message to one of brokers.
                  * todo 发送消息
                  */
+                // 1.发送同步消息
                 SendResult sendResult = producer.send(msg, 20 * 1000);
+
+                // 2.发送批量消息
+                List<Message> batchMessage = new ArrayList<>();
+                SendResult batchSendResult = producer.send(batchMessage);
+
+                // 3.发送异步消息
+                producer.send(msg, new SendCallback() {
+                    @Override
+                    public void onSuccess(SendResult sendResult) {
+                    }
+
+                    @Override
+                    public void onException(Throwable e) {
+                    }
+                });
+
+                // 4.发送oneway消息
+                producer.sendOneway(msg);
+
+
                 /*
                  * There are different ways to send message, if you don't care about the send result,you can use this way
                  * {@code

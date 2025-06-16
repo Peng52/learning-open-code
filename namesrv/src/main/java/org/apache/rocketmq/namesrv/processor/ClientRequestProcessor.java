@@ -50,12 +50,18 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
         this.startupTimeMillis = System.currentTimeMillis();
     }
 
+    /**
+     * todo 通过Topic获取路由信息
+     */
     @Override
     public RemotingCommand processRequest(final ChannelHandlerContext ctx,
         final RemotingCommand request) throws Exception {
         return this.getRouteInfoByTopic(ctx, request);
     }
 
+    /**
+     * todo 获取topic的路由信息
+     */
     public RemotingCommand getRouteInfoByTopic(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
@@ -70,7 +76,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
             response.setRemark("name server not ready");
             return response;
         }
-
+        // topic 信息
         TopicRouteData topicRouteData = this.namesrvController.getRouteInfoManager().pickupTopicRouteData(requestHeader.getTopic());
 
         if (topicRouteData != null) {
@@ -101,7 +107,7 @@ public class ClientRequestProcessor implements NettyRequestProcessor {
             response.setRemark(null);
             return response;
         }
-
+        // todo 否则没有找到 Topic 信息
         response.setCode(ResponseCode.TOPIC_NOT_EXIST);
         response.setRemark("No topic route info in name server for the topic: " + requestHeader.getTopic()
             + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));

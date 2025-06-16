@@ -58,8 +58,8 @@ public class RouteInfoManager {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private static final long DEFAULT_BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    // ：topic消息队列的路由信息，消息发送时根 据路由表进行负载均衡。
-    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
+    // ：topic消息队列的路由信息，消息发送时根 据路由表进行负载均衡。(可以通过brokerName获取到BrokerData信息)
+    private final Map<String/* topic */, Map<String/*brokerName*/, QueueData>> topicQueueTable;
     // Broker基础信息，包含brokerName、所属 集群名称、主备Broker地址。
     private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
     // ：Broker集群信息，存储集群中所有Broker 的名称。

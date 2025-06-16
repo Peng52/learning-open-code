@@ -822,6 +822,7 @@ public class MQClientInstance {
                             }
                         }
                     } else {
+                        // todo 从nameServer 获取路由信息
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, clientConfig.getMqClientApiTimeout());
                     }
                     if (topicRouteData != null) {
@@ -1171,6 +1172,7 @@ public class MQClientInstance {
         if (brokerName == null) {
             return null;
         }
+        // todo 这里的brokerId就是 brokerName
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
             return map.get(MixAll.MASTER_ID);

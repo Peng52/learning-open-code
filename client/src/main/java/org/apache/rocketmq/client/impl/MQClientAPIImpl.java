@@ -580,7 +580,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         throw new MQBrokerException(response.getCode(), response.getRemark(), addr);
 
     }
-
+    //todo pengcheng: 发送消息
     public SendResult sendMessage(
         final String addr,
         final String brokerName,
@@ -591,9 +591,11 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         final SendMessageContext context,
         final DefaultMQProducerImpl producer
     ) throws RemotingException, MQBrokerException, InterruptedException {
+        //todo pengcheng: 发送消息
         return sendMessage(addr, brokerName, msg, requestHeader, timeoutMillis, communicationMode, null, null, null, 0, context, producer);
     }
 
+    //todo pengcheng: 发送消息
     public SendResult sendMessage(
         final String addr,
         final String brokerName,
@@ -658,6 +660,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         return null;
     }
 
+    //todo pengcheng: 发送同步消息
     private SendResult sendMessageSync(
         final String addr,
         final String brokerName,
