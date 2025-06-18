@@ -26,12 +26,20 @@ import org.apache.rocketmq.common.message.MessageQueue;
  * RocketMQ 客户端中负责  故障转移策略  的核心类
  */
 public class MQFaultStrategy {
+    /**
+     * 实现类
+     *
+     * @see LatencyFaultToleranceImpl
+     */
     private LatencyFaultTolerance<String> latencyFaultTolerance;
     private volatile boolean sendLatencyFaultEnable;
     private volatile boolean startDetectorEnable;
     private long[] latencyMax = {50L, 100L, 550L, 1800L, 3000L, 5000L, 15000L};
     private long[] notAvailableDuration = {0L, 0L, 2000L, 5000L, 6000L, 10000L, 30000L};
 
+    /**
+     * 不可用 broker
+     */
     public static class BrokerFilter implements QueueFilter {
         private String lastBrokerName;
 
@@ -39,7 +47,8 @@ public class MQFaultStrategy {
             this.lastBrokerName = lastBrokerName;
         }
 
-        @Override public boolean filter(MessageQueue mq) {
+        @Override
+        public boolean filter(MessageQueue mq) {
             if (lastBrokerName != null) {
                 return !mq.getBrokerName().equals(lastBrokerName);
             }
@@ -49,24 +58,35 @@ public class MQFaultStrategy {
 
     // 创建 BrokerFilter 过滤broker
     private ThreadLocal<BrokerFilter> threadBrokerFilter = new ThreadLocal<BrokerFilter>() {
-        @Override protected BrokerFilter initialValue() {
+        @Override
+        protected BrokerFilter initialValue() {
             return new BrokerFilter();
         }
     };
 
+    /**
+     * 可达Broker
+     */
     private QueueFilter reachableFilter = new QueueFilter() {
-        @Override public boolean filter(MessageQueue mq) {
+        @Override
+        public boolean filter(MessageQueue mq) {
             return latencyFaultTolerance.isReachable(mq.getBrokerName());
         }
     };
 
+    /**
+     * 可用 broker
+     */
     private QueueFilter availableFilter = new QueueFilter() {
-        @Override public boolean filter(MessageQueue mq) {
+        @Override
+        public boolean filter(MessageQueue mq) {
             return latencyFaultTolerance.isAvailable(mq.getBrokerName());
         }
     };
 
-
+    /**
+     * 创建 故障转移机制
+     */
     public MQFaultStrategy(ClientConfig cc, Resolver fetcher, ServiceDetector serviceDetector) {
         this.latencyFaultTolerance = new LatencyFaultToleranceImpl(fetcher, serviceDetector);
         this.latencyFaultTolerance.setDetectInterval(cc.getDetectInterval());
@@ -146,19 +166,20 @@ public class MQFaultStrategy {
             if (resetIndex) {
                 tpInfo.resetIndex();
             }
+            // 从availableFilter可用中找
             MessageQueue mq = tpInfo.selectOneMessageQueue(availableFilter, brokerFilter);
             if (mq != null) {
                 return mq;
             }
-
+            // 从reachableFilter中找
             mq = tpInfo.selectOneMessageQueue(reachableFilter, brokerFilter);
             if (mq != null) {
                 return mq;
             }
-
+            // 还是没有找到，直接轮询了
             return tpInfo.selectOneMessageQueue();
         }
-
+        // todo 未开启 故障延迟机制
         MessageQueue mq = tpInfo.selectOneMessageQueue(brokerFilter);
         if (mq != null) {
             return mq;

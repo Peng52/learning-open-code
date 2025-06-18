@@ -72,6 +72,9 @@ public class TopicPublishInfo {
         this.haveTopicRouterInfo = haveTopicRouterInfo;
     }
 
+    /**
+     * 未开启故障延迟机制 ，选择broker messageQueue
+     */
     public MessageQueue selectOneMessageQueue(QueueFilter ...filter) {
         return selectOneMessageQueue(this.messageQueueList, this.sendWhichQueue, filter);
     }
