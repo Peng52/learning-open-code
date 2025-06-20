@@ -194,8 +194,11 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     }
 
     public class FaultItem implements Comparable<FaultItem> {
+        // Broker名称
         private final String name;
+        // 当前延迟
         private volatile long currentLatency;
+        // 开始规避的时间戳
         private volatile long startTimestamp;
         private volatile long checkStamp;
         private volatile boolean reachableFlag;
