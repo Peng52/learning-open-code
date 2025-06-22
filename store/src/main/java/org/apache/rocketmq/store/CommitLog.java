@@ -16,9 +16,13 @@
  */
 package org.apache.rocketmq.store;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;

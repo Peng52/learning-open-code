@@ -132,7 +132,9 @@ public class MiniCommitLog {
     
     // 测试
     public static void main(String[] args) {
-        MiniCommitLog commitLog = new MiniCommitLog("/tmp/mini-commitlog", 1024 * 1024); // 1MB文件
+        String storePath = "G:\\learn-proj\\rocketmq\\test\\src\\test\\java\\org\\apache\\rocketmq\\test\\peng\\commitLog_my.txt";
+
+        MiniCommitLog commitLog = new MiniCommitLog(storePath, 1024 * 1024); // 1MB文件
         
         // 模拟写入10条消息
         for (int i = 0; i < 10; i++) {
