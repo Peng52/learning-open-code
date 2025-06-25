@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -145,7 +146,7 @@ public class _06_12_Test {
 
 
     /**
-     * sdfs
+     * randomAccessFile.setLength() 直接使文件占用了length的空间
      */
     @Test
     public void test22() throws IOException {
@@ -170,6 +171,9 @@ public class _06_12_Test {
         byteBuffer.flip();
         int writeBytes = fileChannel.write(byteBuffer);
         System.out.println("写入磁盘数：" + writeBytes);
+        long size = fileChannel.size();
+        System.out.println("当前文件的大小：" + size);
+
         // 强制刷盘
         fileChannel.force(true);
         fileChannel.close();
@@ -205,6 +209,53 @@ public class _06_12_Test {
         int limit = byteBuffer.limit();
         System.out.println(position + " " + remaining + " " + limit + " " + capacity);
         System.out.println("--------------------------------------------");
+    }
+
+
+    /**
+     * MappedByteBuffer 基本读写
+     */
+    @Test
+    public void testMappedByteBuffer() throws Exception {
+        String fileName = "G:\\learn-proj\\rocketmq\\test\\src\\test\\java\\org\\apache\\rocketmq\\test\\peng\\temp_0625.txt";
+
+        // 写入
+        RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
+        FileChannel channel = randomAccessFile.getChannel();
+        MappedByteBuffer map = channel.map(FileChannel.MapMode.READ_WRITE, 1, 4);
+        map.put("100".getBytes(StandardCharsets.UTF_8));
+        map.force();
+        channel.close();
+        randomAccessFile.close();
+
+        // 读取
+        RandomAccessFile randomAccessFile2 = new RandomAccessFile(fileName, "rw");
+        FileChannel channel2 = randomAccessFile2.getChannel();
+        MappedByteBuffer map2 = channel2.map(FileChannel.MapMode.READ_WRITE, 0, 4);
+        byte[] bytes = new byte[3];
+        map2.get(bytes);
+        String s = new String(bytes);
+        System.out.println(s);
+        System.out.println(s);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void testMappedByteBuffer11() throws Exception {
+        String fileName = "G:\\learn-proj\\rocketmq\\test\\src\\test\\java\\org\\apache\\rocketmq\\test\\peng\\temp_0625.txt";
+        RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
+        FileChannel channel = randomAccessFile.getChannel();
+        // position 写到文件指针位置,  size = 20 确定映射到内存中的大小
+        MappedByteBuffer map = channel.map(FileChannel.MapMode.READ_WRITE, 1024, 20);
+        // 这里的size大小是限制 byteBuffer缓存大小，限制的
+        int capacity = map.capacity();
+        System.out.println(capacity);
+        map.put("12345678901234567890".getBytes(StandardCharsets.UTF_8));
+        map.force();
+        channel.close();
+        randomAccessFile.close();
     }
 
 }
