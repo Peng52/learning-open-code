@@ -25,7 +25,7 @@ public class MessageExtBrokerInner extends MessageExt {
     private static final long serialVersionUID = 7256001576878700634L;
     private String propertiesString;
     private long tagsCode;
-
+    // todo 这个什么时候序列化的
     private ByteBuffer encodedBuff;
 
     private volatile boolean encodeCompleted;

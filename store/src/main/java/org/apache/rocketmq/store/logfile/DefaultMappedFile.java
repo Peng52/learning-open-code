@@ -85,6 +85,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
     protected String fileName;
+    // todo 这里就是文件名
     protected long fileFromOffset;
     protected File file;
     protected MappedByteBuffer mappedByteBuffer;
@@ -154,16 +155,21 @@ public class DefaultMappedFile extends AbstractMappedFile {
         this.transientStorePool = transientStorePool;
     }
 
+    /**
+     * todo 创建 MappedFile 的文件映射，都会调用 init() 方法
+     */
     private void init(final String fileName, final int fileSize) throws IOException {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.file = new File(fileName);
+        // todo 解析文件名, 文件名就是文件物理起始地址
         this.fileFromOffset = Long.parseLong(this.file.getName());
         boolean ok = false;
 
         UtilAll.ensureDirOK(this.file.getParent());
 
         try {
+            // fileSize = 1G, 直接映射了1G内存
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
@@ -255,18 +261,27 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
     }
 
+    /**
+     * todo 添加消息
+     */
     @Override
     public AppendMessageResult appendMessage(final MessageExtBrokerInner msg, final AppendMessageCallback cb,
         PutMessageContext putMessageContext) {
         return appendMessagesInner(msg, cb, putMessageContext);
     }
 
+    /**
+     * todo 批量添加消息
+     */
     @Override
     public AppendMessageResult appendMessages(final MessageExtBatch messageExtBatch, final AppendMessageCallback cb,
         PutMessageContext putMessageContext) {
         return appendMessagesInner(messageExtBatch, cb, putMessageContext);
     }
 
+    /**
+     * todo 添加消息具体实现
+     */
     public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
         PutMessageContext putMessageContext) {
         assert messageExt != null;
@@ -279,10 +294,12 @@ public class DefaultMappedFile extends AbstractMappedFile {
             byteBuffer.position(currentPos);
             AppendMessageResult result;
             if (messageExt instanceof MessageExtBatch && !((MessageExtBatch) messageExt).isInnerBatch()) {
+                // todo 批量消息处理
                 // traditional batch message
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
                     (MessageExtBatch) messageExt, putMessageContext);
             } else if (messageExt instanceof MessageExtBrokerInner) {
+                // todo 单条消息处理 写入到 CommitLog
                 // traditional single message or newly introduced inner-batch message
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
                     (MessageExtBrokerInner) messageExt, putMessageContext);

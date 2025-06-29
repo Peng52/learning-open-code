@@ -181,6 +181,7 @@ public class AllocateMappedFileService extends ServiceThread {
                         mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
                     }
                 } else {
+                    //todo pengcheng: 创建默认的 DefaultMappedFile
                     mappedFile = new DefaultMappedFile(req.getFilePath(), req.getFileSize());
                 }
 
@@ -199,7 +200,7 @@ public class AllocateMappedFileService extends ServiceThread {
                     mappedFile.warmMappedFile(this.messageStore.getMessageStoreConfig().getFlushDiskType(),
                         this.messageStore.getMessageStoreConfig().getFlushLeastPagesWhenWarmMapedFile());
                 }
-
+                // todo 把创建好的文件塞回去。
                 req.setMappedFile(mappedFile);
                 this.hasException = false;
                 isSuccess = true;

@@ -345,7 +345,7 @@ public class DefaultMessageStore implements MessageStore {
             LOGGER.info("last shutdown {}, store path root dir: {}",
                 lastExitOK ? "normally" : "abnormally", messageStoreConfig.getStorePathRootDir());
 
-            // load Commit Log
+            // todo load Commit Log ; 加载 CommitLog 文件
             result = this.commitLog.load();
 
             // load Consume Queue
@@ -399,6 +399,7 @@ public class DefaultMessageStore implements MessageStore {
             this.transientStorePool.init();
         }
 
+        // todo 启动线程
         this.allocateMappedFileService.start();
 
         this.indexService.start();
@@ -574,9 +575,12 @@ public class DefaultMessageStore implements MessageStore {
         return commitLogSize + consumeQueueSize + indexFileSize;
     }
 
+    /**
+     * todo DefaultMessageStore 异步存储消息
+     */
     @Override
     public CompletableFuture<PutMessageResult> asyncPutMessage(MessageExtBrokerInner msg) {
-
+        // todo 执行MessageHook钩子方法
         for (PutMessageHook putMessageHook : putMessageHookList) {
             PutMessageResult handleResult = putMessageHook.executeBeforePutMessage(msg);
             if (handleResult != null) {

@@ -245,6 +245,7 @@ public class BrokerStartup {
     public static BrokerController createBrokerController(String[] args) {
         try {
             BrokerController controller = buildBrokerController(args);
+            // todo 这里初始化了MessageStore消息存储服务
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();

@@ -114,10 +114,11 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 clearReservedProperties(requestHeader);
 
                 if (requestHeader.isBatch()) {
+                    //  todo 批量消息存储
                     response = this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
                         (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
                 } else {
-                    //todo pengcheng: 进一步处理消息
+                    //todo pengcheng: 单条消息处理
                     response = this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
                         (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
                 }
@@ -322,6 +323,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         long beginTimeMillis = this.brokerController.getMessageStore().now();
 
         if (brokerController.getBrokerConfig().isAsyncSendEnable()) {
+            // todo 开启异步
             CompletableFuture<PutMessageResult> asyncPutMessageFuture;
             if (sendTransactionPrepareMessage) {
                 asyncPutMessageFuture = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);

@@ -117,6 +117,7 @@ public class CommitLog implements Swappable {
                 messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                 messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
         } else {
+            // storePath = "// G:\learn-proj\rocketmq\rocket_home\store\commitlog";
             this.mappedFileQueue = new MappedFileQueue(storePath,
                 messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                 messageStore.getAllocateMappedFileService());
@@ -163,7 +164,11 @@ public class CommitLog implements Swappable {
         return putMessageThreadLocal;
     }
 
+    /**
+     * todo 加载 commitLog 文件
+     */
     public boolean load() {
+        // mappedFileQueue 创建这个对象时候已传入了路径
         boolean result = this.mappedFileQueue.load();
         if (result && !defaultMessageStore.getMessageStoreConfig().isDataReadAheadEnable()) {
             scanFileAndSetReadMode(LibC.MADV_RANDOM);
@@ -904,6 +909,9 @@ public class CommitLog implements Swappable {
         }
     }
 
+    /**
+     * todo 异步保存消息
+     */
     public CompletableFuture<PutMessageResult> asyncPutMessage(final MessageExtBrokerInner msg) {
         // Set the storage time
         if (!defaultMessageStore.getMessageStoreConfig().isDuplicationEnable()) {
@@ -1904,19 +1912,30 @@ public class CommitLog implements Swappable {
             return null;
         }
 
+        /**
+         * todo 添加消息；向 commitLog中添加消息
+         * fileFromOffset：当前 CommitLog 文件的起始偏移量（用于计算物理偏移）。
+         * byteBuffer：用于写入消息的内存缓冲区（通常映射自 MappedFile 的 MappedByteBuffer）。
+         * maxBlank：当前缓冲区剩余可用空间（用于判断是否空间不足）。
+         * msgInner：待写入的消息对象（包含主题、队列、消息体等元数据）。
+         * putMessageContext：上下文信息（如事务状态）。
+         */
         public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
             final MessageExtBrokerInner msgInner, PutMessageContext putMessageContext) {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
+            // todo ​​preEncodeBuffer​​：消息的预编码缓冲区（已序列化的消息头和消息体）。
             ByteBuffer preEncodeBuffer = msgInner.getEncodedBuff();
             final boolean isMultiDispatchMsg = CommitLog.isMultiDispatchMsg(messageStoreConfig, msgInner);
             if (isMultiDispatchMsg) {
+                // todo 通常指 LMQ（RocketMQ 的轻量级消息队列）中的特殊消息
                 AppendMessageResult appendMessageResult = handlePropertiesForLmqMsg(preEncodeBuffer, msgInner);
                 if (appendMessageResult != null) {
                     return appendMessageResult;
                 }
             }
 
+            // msgLen：消息总长度（从缓冲区头部读取的 4 字节整数，表示消息的总字节数）。
             final int msgLen = preEncodeBuffer.getInt(0);
             preEncodeBuffer.position(0);
             preEncodeBuffer.limit(msgLen);
@@ -1924,6 +1943,7 @@ public class CommitLog implements Swappable {
             // PHY OFFSET
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
+            // todo 生成消息 ID（MsgId）
             Supplier<String> msgIdSupplier = () -> {
                 int sysflag = msgInner.getSysFlag();
                 int msgIdLen = (sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
@@ -1940,6 +1960,7 @@ public class CommitLog implements Swappable {
             // this msg maybe an inner-batch msg.
             short messageNum = getMessageNum(msgInner);
 
+            // todo 处理事务消息
             // Transaction messages that require special handling
             final int tranType = MessageSysFlag.getTransactionValue(msgInner.getSysFlag());
             switch (tranType) {
@@ -1953,18 +1974,21 @@ public class CommitLog implements Swappable {
                 default:
                     break;
             }
-
+            // todo 检查剩余空间是否足够
             // Determines whether there is sufficient free space
             if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
+                // todo 空间不足，写入结束标记（BLANK_MAGIC_CODE）
                 this.msgStoreItemMemory.clear();
                 // 1 TOTALSIZE
                 this.msgStoreItemMemory.putInt(maxBlank);
+                // todo ​​写入结束标记​​：向缓冲区写入 BLANK_MAGIC_CODE（固定值 0xAABBCCDD），标识文件已满，后续消息将写入新文件。
                 // 2 MAGICCODE
                 this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
                 // 3 The remaining space may be any value
                 // Here the length of the specially set maxBlank
                 final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
                 byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
+                // todo 文件结束了？ 感觉是空间不够？
                 return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset,
                     maxBlank, /* only wrote 8 bytes, but declare wrote maxBlank for compute write position */
                     msgIdSupplier, msgInner.getStoreTimestamp(),
@@ -1988,6 +2012,7 @@ public class CommitLog implements Swappable {
             // 11 STORETIMESTAMP refresh store time stamp in lock
             preEncodeBuffer.putLong(pos, msgInner.getStoreTimestamp());
             if (enabledAppendPropCRC) {
+                // todo 启用属性CRC校验
                 // 18 CRC32
                 int checkSize = msgLen - crc32ReservedLength;
                 ByteBuffer tmpBuffer = preEncodeBuffer.duplicate();
@@ -1998,16 +2023,19 @@ public class CommitLog implements Swappable {
             }
 
             final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
+            // todo ​​性能统计​​：使用 PerfCounter 记录“写入内存”的耗时（WRITE_MEMORY_TIME_MS），用于监控和性能优化。
             CommitLog.this.getMessageStore().getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
-            // Write messages to the queue buffer
+            // todo Write messages to the queue buffer, 把消息保存进去了
+            // todo ​​内存写入​​：将预编码的消息（preEncodeBuffer）写入当前内存缓冲区（byteBuffer），完成消息的物理存储。
             byteBuffer.put(preEncodeBuffer);
             CommitLog.this.getMessageStore().getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
+            // todo  // 清空预编码缓冲区，释放内存
             msgInner.setEncodedBuff(null);
 
             if (isMultiDispatchMsg) {
                 CommitLog.this.multiDispatch.updateMultiQueueOffset(msgInner);
             }
-
+            //todo 文件存储成功
             return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,
                 msgInner.getStoreTimestamp(), queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills, messageNum);
         }

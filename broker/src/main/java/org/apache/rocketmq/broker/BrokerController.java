@@ -476,6 +476,9 @@ public class BrokerController {
         return brokerMetricsManager;
     }
 
+    /**
+     * todo 这里创建了两个 nettyServer
+     */
     protected void initializeRemotingServer() throws CloneNotSupportedException {
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
         NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
@@ -830,7 +833,7 @@ public class BrokerController {
         if (!result) {
             return false;
         }
-
+        // todo 消息存储初始化
         result = this.initializeMessageStore();
         if (!result) {
             return false;
@@ -850,6 +853,7 @@ public class BrokerController {
 
         if (messageStore != null) {
             registerMessageStoreHook();
+            // todo load 加载文件
             result = this.messageStore.load();
         }
 
@@ -870,10 +874,11 @@ public class BrokerController {
 
         if (result) {
 
+            // 创建netty server
             initializeRemotingServer();
 
             initializeResources();
-
+            // 注册Processor处理器
             registerProcessor();
 
             initializeScheduledTasks();

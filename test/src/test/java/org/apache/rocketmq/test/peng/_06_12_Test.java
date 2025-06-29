@@ -240,7 +240,9 @@ public class _06_12_Test {
     }
 
     /**
-     *
+     * 1. position: 定义：映射起始位置在文件中的字节偏移量 从 0 开始计数\
+     * 2. 可以大于当前文件大小（但写入时会扩展文件）
+     * 3. 如果position超出了文件大小，会先扩容到position位置，在加上写入buffer size .
      */
     @Test
     public void testMappedByteBuffer11() throws Exception {
@@ -248,11 +250,11 @@ public class _06_12_Test {
         RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
         FileChannel channel = randomAccessFile.getChannel();
         // position 写到文件指针位置,  size = 20 确定映射到内存中的大小
-        MappedByteBuffer map = channel.map(FileChannel.MapMode.READ_WRITE, 1024, 20);
+        MappedByteBuffer map = channel.map(FileChannel.MapMode.READ_WRITE, 21, 20);
         // 这里的size大小是限制 byteBuffer缓存大小，限制的
         int capacity = map.capacity();
         System.out.println(capacity);
-        map.put("12345678901234567890".getBytes(StandardCharsets.UTF_8));
+        map.put("a".getBytes(StandardCharsets.UTF_8));
         map.force();
         channel.close();
         randomAccessFile.close();

@@ -37,14 +37,29 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 import org.apache.rocketmq.store.logfile.MappedFile;
 
+/**
+ * 在 RocketMQ 的存储架构中，MappedFileQueue 是管理 ​​内存映射文件（MappedFile）​​ 的核心组件，负责维护一组有序的 MappedFile，
+ * 并提供高效的文件管理、数据追加、刷盘和过期文件清理能力。它是 RocketMQ 实现 ​​顺序写​​、​​页缓存利用​​ 和 ​​高吞吐量​​ 的关键基础。
+ *
+ * 一、MappedFileQueue 的核心职责
+ * MappedFileQueue 主要服务于 RocketMQ 的存储层（如 CommitLog、ConsumeQueue），其核心职责包括：
+ *
+ * ​​文件管理​​：维护一组有序的 MappedFile（按文件创建时间或偏移量排序），支持动态扩容（文件滚动）和缩容（删除过期文件）。
+ * ​​数据追加​​：将消息或其他数据顺序写入当前活跃的 MappedFile，自动切换至新文件（当当前文件写满时）。
+ * ​​刷盘控制​​：协调底层 MappedFile 的刷盘操作（同步/异步），确保数据持久化。
+ * ​​数据定位​​：根据偏移量快速定位到对应的 MappedFile 和文件内位置，支持高效的数据读取。
+ * ​​资源回收​​：清理过期或无效的 MappedFile（如超过保留时间的日志文件），释放磁盘空间。
+ */
 public class MappedFileQueue implements Swappable {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final Logger LOG_ERROR = LoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
+    // 文件存储路径（如 CommitLog 的路径为 ${ROCKETMQ_HOME}/store/commitlog）
     protected final String storePath;
-
+    // 文件最大容量（默认 1GB，由 CommitLog 或 ConsumeQueue 的配置决定）
     protected final int mappedFileSize;
 
+    // todo MappedFile实现类 DefaultMappedFile
     protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<>();
 
     protected final AllocateMappedFileService allocateMappedFileService;
@@ -243,6 +258,9 @@ public class MappedFileQueue implements Swappable {
         return true;
     }
 
+    /**
+     * todo 加载文件 commitLog / consumeQueue / index
+     */
     public boolean doLoad(List<File> files) {
         // ascending order
         files.sort(Comparator.comparing(File::getName));
@@ -266,8 +284,9 @@ public class MappedFileQueue implements Swappable {
             }
 
             try {
+                // todo DefaultMappedFile
                 MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
-
+                // todo 这里更新 wrotePosition / flushPosition / committedPosition , 为啥直接就是文件的大小呢？？
                 mappedFile.setWrotePosition(this.mappedFileSize);
                 mappedFile.setFlushedPosition(this.mappedFileSize);
                 mappedFile.setCommittedPosition(this.mappedFileSize);
@@ -380,6 +399,8 @@ public class MappedFileQueue implements Swappable {
         MappedFile mappedFileLast = null;
         while (!this.mappedFiles.isEmpty()) {
             try {
+                // todo 什么时候是 isEmpty()
+                // todo 就是取 最后 mappedFile 文件
                 mappedFileLast = this.mappedFiles.get(this.mappedFiles.size() - 1);
                 break;
             } catch (IndexOutOfBoundsException e) {
