@@ -88,6 +88,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     // todo 这里就是文件名
     protected long fileFromOffset;
     protected File file;
+    // todo 内存映射的文件
     protected MappedByteBuffer mappedByteBuffer;
     protected volatile long storeTimestamp = 0;
     protected boolean firstCreateInQueue = false;
@@ -130,6 +131,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     public DefaultMappedFile() {
     }
 
+    //todo pengcheng: 创建 DefaultMappedFile
     public DefaultMappedFile(final String fileName, final int fileSize) throws IOException {
         init(fileName, fileSize);
     }

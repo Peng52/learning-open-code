@@ -54,6 +54,7 @@ public class BrokerStartup {
 
     public static BrokerController start(BrokerController controller) {
         try {
+            //todo pengcheng: 启动服务
             controller.start();
 
             String tip = String.format("The broker[%s, %s] boot success. serializeType=%s",

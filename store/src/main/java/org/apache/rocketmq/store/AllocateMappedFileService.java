@@ -138,10 +138,18 @@ public class AllocateMappedFileService extends ServiceThread {
         }
     }
 
+    /**
+     * todo 这个类继承了 ServiceThread -> Runnable {@link DefaultMessageStore#start()}
+     * 启动一个线程 new Thread, 然后启动了线程。就会执行 run() 方法。
+     */
     @Override
     public void run() {
         log.info(this.getServiceName() + " service started");
-
+        // todo 如果没有stop停止，就会一直创建内存映射操作
+        /**
+         * 会从 tableId 队列中取，然后创建内存映射MappedByteBuffer
+         * 最后执行countdown.countdown(),等待线程就可以唤醒了。继续执行。
+         */
         while (!this.isStopped() && this.mmapOperation()) {
 
         }
@@ -221,6 +229,7 @@ public class AllocateMappedFileService extends ServiceThread {
             }
         } finally {
             if (req != null && isSuccess)
+                // todo 创建成功会 countDown()一下。
                 req.getCountDownLatch().countDown();
         }
         return true;

@@ -260,4 +260,32 @@ public class _06_12_Test {
         randomAccessFile.close();
     }
 
+
+    /**
+     * 测试
+     */
+    @Test
+    public void testByteBuffer222() {
+        ByteBuffer allocate = ByteBuffer.allocate(10);
+        int limit = allocate.limit();
+        System.out.println(limit);
+
+        allocate.limit(6);
+        allocate.put(new byte[6]);
+
+        int position = allocate.position();
+        int limit1 = allocate.limit();
+        System.out.println(limit1 + "  " + position);
+        System.out.println(allocate);
+
+        // slice
+        ByteBuffer byteBuffer = ByteBuffer.allocate(10);
+        ByteBuffer byteBuffer1 = byteBuffer.put(new byte[2]);
+        ByteBuffer sliceByteBuffer = byteBuffer.slice();
+        int position1 = sliceByteBuffer.position();
+        int limit2 = sliceByteBuffer.limit();
+        int capacity = sliceByteBuffer.capacity();
+        System.out.println(position1);
+    }
+
 }

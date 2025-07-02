@@ -1843,6 +1843,9 @@ public class CommitLog implements Swappable {
         }
     }
 
+    /**
+     * todo CommitLog中实现了不少类
+     */
     class DefaultAppendMessageCallback implements AppendMessageCallback {
         // File at the end of the minimum fixed length empty
         private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
@@ -2026,7 +2029,7 @@ public class CommitLog implements Swappable {
             // todo ​​性能统计​​：使用 PerfCounter 记录“写入内存”的耗时（WRITE_MEMORY_TIME_MS），用于监控和性能优化。
             CommitLog.this.getMessageStore().getPerfCounter().startTick("WRITE_MEMORY_TIME_MS");
             // todo Write messages to the queue buffer, 把消息保存进去了
-            // todo ​​内存写入​​：将预编码的消息（preEncodeBuffer）写入当前内存缓冲区（byteBuffer），完成消息的物理存储。
+            // todo 消息写入: 将预编码的消息（preEncodeBuffer）写入当前内存缓冲区（byteBuffer），完成消息的物理存储。
             byteBuffer.put(preEncodeBuffer);
             CommitLog.this.getMessageStore().getPerfCounter().endTick("WRITE_MEMORY_TIME_MS");
             // todo  // 清空预编码缓冲区，释放内存

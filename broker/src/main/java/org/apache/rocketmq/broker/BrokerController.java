@@ -1609,7 +1609,7 @@ public class BrokerController {
     }
 
     protected void startBasicService() throws Exception {
-
+        //todo pengcheng: DefaultMessageStore 消息存储服务
         if (this.messageStore != null) {
             this.messageStore.start();
         }
@@ -1722,6 +1722,7 @@ public class BrokerController {
             this.brokerOuterAPI.start();
         }
 
+        //todo pengcheng: 启动基础服务 (DefaultMessageStore 消息存储服务)
         startBasicService();
 
         if (!isIsolated && !this.messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
