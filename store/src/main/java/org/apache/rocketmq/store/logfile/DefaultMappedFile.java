@@ -292,6 +292,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
 
         if (currentPos < this.fileSize) {
+            // todo 调用文件 MessageBuffer.slice(), 剩余buffer内存映射
             ByteBuffer byteBuffer = appendMessageBuffer().slice();
             byteBuffer.position(currentPos);
             AppendMessageResult result;
@@ -308,6 +309,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             } else {
                 return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
             }
+            // todo 写入成功后，更新 wrote_position 指针位置
             WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
             this.storeTimestamp = result.getStoreTimestamp();
             return result;

@@ -100,6 +100,7 @@ public class AllocateMappedFileService extends ServiceThread {
         try {
             if (result != null) {
                 messageStore.getPerfCounter().startTick("WAIT_MAPFILE_TIME_MS");
+                //todo pengcheng: countDownLatch 这里就是等 文件创建好
                 boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
                 messageStore.getPerfCounter().endTick("WAIT_MAPFILE_TIME_MS");
                 if (!waitOK) {

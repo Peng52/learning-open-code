@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class TopicQueueLock {
     private final int size;
+    // todo 这里的Lock 实现 ReentrantLock()
     private final List<Lock> lockList;
 
     public TopicQueueLock() {

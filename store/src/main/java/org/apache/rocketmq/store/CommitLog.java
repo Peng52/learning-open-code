@@ -117,6 +117,7 @@ public class CommitLog implements Swappable {
                 messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
                 messageStore.getAllocateMappedFileService(), this::getFullStorePaths);
         } else {
+            // todo
             // storePath = "// G:\learn-proj\rocketmq\rocket_home\store\commitlog";
             this.mappedFileQueue = new MappedFileQueue(storePath,
                 messageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(),
@@ -951,6 +952,7 @@ public class CommitLog implements Swappable {
         String topicQueueKey = generateKey(putMessageThreadLocal.getKeyBuilder(), msg);
         long elapsedTimeInLock = 0;
         MappedFile unlockMappedFile = null;
+        // todo DefaultMappedFile 写入消息commitLog文件
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
 
         long currOffset;
@@ -980,7 +982,7 @@ public class CommitLog implements Swappable {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
             }
         }
-
+        // todo topic 加锁了
         topicQueueLock.lock(topicQueueKey);
         try {
 
@@ -999,7 +1001,7 @@ public class CommitLog implements Swappable {
             }
             msg.setEncodedBuff(putMessageThreadLocal.getEncoder().getEncoderBuffer());
             PutMessageContext putMessageContext = new PutMessageContext(topicQueueKey);
-
+            // todo 加锁 (自旋、或者可重入锁)
             putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
             try {
                 long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
@@ -1012,6 +1014,7 @@ public class CommitLog implements Swappable {
                 }
 
                 if (null == mappedFile || mappedFile.isFull()) {
+                    // todo 获取或者创建 MappedFile
                     mappedFile = this.mappedFileQueue.getLastMappedFile(0); // Mark: NewFile may be cause noise
                     if (isCloseReadAhead()) {
                         setFileReadMode(mappedFile, LibC.MADV_RANDOM);
@@ -1027,6 +1030,7 @@ public class CommitLog implements Swappable {
                 result = mappedFile.appendMessage(msg, this.appendMessageCallback, putMessageContext);
                 switch (result.getStatus()) {
                     case PUT_OK:
+                        // todo 消息添加成功
                         onCommitLogAppend(msg, result, mappedFile);
                         break;
                     case END_OF_FILE:
@@ -1188,7 +1192,7 @@ public class CommitLog implements Swappable {
                     beginTimeInLock = 0;
                     return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, null));
                 }
-
+                // todo  消息存储
                 result = mappedFile.appendMessages(messageExtBatch, this.appendMessageCallback, putMessageContext);
                 switch (result.getStatus()) {
                     case PUT_OK:

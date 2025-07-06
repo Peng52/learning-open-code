@@ -315,6 +315,9 @@ public class MappedFileQueue implements Swappable {
         return 0;
     }
 
+    /**
+     * todo 获取 MappedFile
+     */
     public MappedFile getLastMappedFile(final long startOffset, boolean needCreate) {
         long createOffset = -1;
         MappedFile mappedFileLast = getLastMappedFile();
@@ -328,6 +331,7 @@ public class MappedFileQueue implements Swappable {
         }
 
         if (createOffset != -1 && needCreate) {
+            //todo 尝试创建新文件 commitLog
             return tryCreateMappedFile(createOffset);
         }
 
@@ -360,6 +364,9 @@ public class MappedFileQueue implements Swappable {
         return false;
     }
 
+    /**
+     * todo 尝试创建 MappedFile
+     */
     public MappedFile tryCreateMappedFile(long createOffset) {
         String nextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset);
         String nextNextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset
@@ -399,7 +406,7 @@ public class MappedFileQueue implements Swappable {
         MappedFile mappedFileLast = null;
         while (!this.mappedFiles.isEmpty()) {
             try {
-                // todo 什么时候是 isEmpty()
+                // todo 什么时候不是 isEmpty()
                 // todo 就是取 最后 mappedFile 文件
                 mappedFileLast = this.mappedFiles.get(this.mappedFiles.size() - 1);
                 break;

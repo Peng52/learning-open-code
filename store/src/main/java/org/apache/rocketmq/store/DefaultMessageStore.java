@@ -227,6 +227,7 @@ public class DefaultMessageStore implements MessageStore {
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
         } else {
+            //todo 创建 CommitLog
             this.commitLog = new CommitLog(this);
         }
 

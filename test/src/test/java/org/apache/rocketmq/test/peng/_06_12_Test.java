@@ -280,11 +280,13 @@ public class _06_12_Test {
 
         // slice
         ByteBuffer byteBuffer = ByteBuffer.allocate(10);
-        ByteBuffer byteBuffer1 = byteBuffer.put(new byte[2]);
+        ByteBuffer byteBuffer1 = byteBuffer.putShort((short) 0b0111_1111_1111_1111);
         ByteBuffer sliceByteBuffer = byteBuffer.slice();
         int position1 = sliceByteBuffer.position();
         int limit2 = sliceByteBuffer.limit();
         int capacity = sliceByteBuffer.capacity();
+        sliceByteBuffer.putInt(Integer.MAX_VALUE);
+        int position2 = sliceByteBuffer.position();
         System.out.println(position1);
     }
 
