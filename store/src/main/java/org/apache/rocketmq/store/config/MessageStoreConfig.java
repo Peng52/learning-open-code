@@ -28,6 +28,7 @@ public class MessageStoreConfig {
     public static final String MULTI_PATH_SPLITTER = System.getProperty("rocketmq.broker.multiPathSplitter", ",");
 
     //The root directory in which the log data is kept
+    // todo C:\Users\11619\"store"
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
 

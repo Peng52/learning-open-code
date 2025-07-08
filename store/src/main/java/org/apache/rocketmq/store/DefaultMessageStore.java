@@ -162,7 +162,7 @@ public class DefaultMessageStore implements MessageStore {
 
     private volatile boolean shutdown = true;
     protected boolean notifyMessageArriveInBatch = false;
-
+    // todo checkpoint 文件
     protected StoreCheckpoint storeCheckpoint;
     private TimerMessageStore timerMessageStore;
 
@@ -357,6 +357,7 @@ public class DefaultMessageStore implements MessageStore {
             }
 
             if (result) {
+                // todo 加载 checkpoint 文件
                 loadCheckPoint();
                 result = this.indexService.load(lastExitOK);
                 this.recover(lastExitOK);
@@ -380,6 +381,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public void loadCheckPoint() throws IOException {
+        // G:\learn-proj\rocketmq\rocket_home\store
         this.storeCheckpoint =
             new StoreCheckpoint(
                 StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));

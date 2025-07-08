@@ -28,6 +28,9 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.logfile.DefaultMappedFile;
 
+/**
+ * todo StoreCheckPoint 文件
+ */
 public class StoreCheckpoint {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private final RandomAccessFile randomAccessFile;
@@ -39,6 +42,10 @@ public class StoreCheckpoint {
     private volatile long masterFlushedOffset = 0;
     private volatile long confirmPhyOffset = 0;
 
+    /**
+     * todo 创建checkpoint 文件
+     * todo scpPath 就是checkpoint 配置路径
+     */
     public StoreCheckpoint(final String scpPath) throws IOException {
         File file = new File(scpPath);
         UtilAll.ensureDirOK(file.getParent());

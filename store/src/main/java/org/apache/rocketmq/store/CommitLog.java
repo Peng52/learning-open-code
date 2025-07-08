@@ -125,7 +125,7 @@ public class CommitLog implements Swappable {
         }
 
         this.defaultMessageStore = messageStore;
-
+        // todo flushManager 将 MappedFile Byebuffer 内存映射 刷新到磁盘中。
         this.flushManager = new DefaultFlushManager();
         this.coldDataCheckService = new ColdDataCheckService();
 
@@ -1501,6 +1501,9 @@ public class CommitLog implements Swappable {
         }
     }
 
+    /**
+     * todo 实时刷新线程
+     */
     class FlushRealTimeService extends FlushCommitLogService {
         private long lastFlushTimestamp = 0;
         private long printTimes = 0;
@@ -1540,9 +1543,11 @@ public class CommitLog implements Swappable {
                     }
 
                     long begin = System.currentTimeMillis();
+                    //todo pengcheng: 调用 MappedFileQueue 刷新到磁盘方法
                     CommitLog.this.mappedFileQueue.flush(flushPhysicQueueLeastPages);
                     long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
                     if (storeTimestamp > 0) {
+                        // todo 更新 checkpoint 刷盘时间
                         CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
                     }
                     long past = System.currentTimeMillis() - begin;
@@ -2146,6 +2151,9 @@ public class CommitLog implements Swappable {
 
     }
 
+    /**
+     * todo 刷新管理器
+     */
     class DefaultFlushManager implements FlushManager {
 
         private final FlushCommitLogService flushCommitLogService;

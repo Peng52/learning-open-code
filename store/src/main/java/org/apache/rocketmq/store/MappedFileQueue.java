@@ -63,7 +63,7 @@ public class MappedFileQueue implements Swappable {
     protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<>();
 
     protected final AllocateMappedFileService allocateMappedFileService;
-
+    // todo 刷新到磁盘的指针position
     protected long flushedWhere = 0;
     protected long committedWhere = 0;
 
@@ -250,6 +250,7 @@ public class MappedFileQueue implements Swappable {
 
 
     public boolean load() {
+        // todo storePath 是文件夹
         File dir = new File(this.storePath);
         File[] ls = dir.listFiles();
         if (ls != null) {
@@ -260,6 +261,8 @@ public class MappedFileQueue implements Swappable {
 
     /**
      * todo 加载文件 commitLog / consumeQueue / index
+     * todo 都是文件夹下的所有文件
+     * todo 然后for循环加载
      */
     public boolean doLoad(List<File> files) {
         // ascending order
@@ -659,11 +662,16 @@ public class MappedFileQueue implements Swappable {
         return deleteCount;
     }
 
+    /**
+     * 刷盘
+     */
     public boolean flush(final int flushLeastPages) {
         boolean result = true;
+        //todo pengcheng: 不懂这里怎么找到？ 具体当前应该找哪一个文件
         MappedFile mappedFile = this.findMappedFileByOffset(this.getFlushedWhere(), this.getFlushedWhere() == 0);
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
+            // todo 文件刷新到磁盘
             int offset = mappedFile.flush(flushLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.getFlushedWhere();

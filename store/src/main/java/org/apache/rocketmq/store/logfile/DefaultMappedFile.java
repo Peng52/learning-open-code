@@ -18,6 +18,21 @@ package org.apache.rocketmq.store.logfile;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.common.message.MessageExtBrokerInner;
+import org.apache.rocketmq.common.utils.NetworkUtil;
+import org.apache.rocketmq.logging.org.slf4j.Logger;
+import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
+import org.apache.rocketmq.store.*;
+import org.apache.rocketmq.store.config.FlushDiskType;
+import org.apache.rocketmq.store.util.LibC;
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,26 +52,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.utils.NetworkUtil;
-import org.apache.rocketmq.logging.org.slf4j.Logger;
-import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
-import org.apache.rocketmq.store.AppendMessageCallback;
-import org.apache.rocketmq.store.AppendMessageResult;
-import org.apache.rocketmq.store.AppendMessageStatus;
-import org.apache.rocketmq.store.CompactionAppendMsgCallback;
-import org.apache.rocketmq.store.PutMessageContext;
-import org.apache.rocketmq.store.SelectMappedBufferResult;
-import org.apache.rocketmq.store.TransientStorePool;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.util.LibC;
-import sun.misc.Unsafe;
-import sun.nio.ch.DirectBuffer;
 
 public class DefaultMappedFile extends AbstractMappedFile {
     public static final int OS_PAGE_SIZE = 1024 * 4;
@@ -137,7 +132,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     public DefaultMappedFile(final String fileName, final int fileSize,
-        final TransientStorePool transientStorePool) throws IOException {
+                             final TransientStorePool transientStorePool) throws IOException {
         init(fileName, fileSize, transientStorePool);
     }
 
@@ -151,7 +146,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     @Override
     public void init(final String fileName, final int fileSize,
-        final TransientStorePool transientStorePool) throws IOException {
+                     final TransientStorePool transientStorePool) throws IOException {
         init(fileName, fileSize);
         this.writeBuffer = transientStorePool.borrowBuffer();
         this.transientStorePool = transientStorePool;
@@ -226,11 +221,11 @@ public class DefaultMappedFile extends AbstractMappedFile {
                 }
             } else {
                 log.debug("matched, but hold failed, request pos: " + pos + ", fileFromOffset: "
-                    + this.fileFromOffset);
+                        + this.fileFromOffset);
             }
         } else {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
-                + ", fileFromOffset: " + this.fileFromOffset);
+                    + ", fileFromOffset: " + this.fileFromOffset);
         }
 
         return false;
@@ -268,7 +263,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
      */
     @Override
     public AppendMessageResult appendMessage(final MessageExtBrokerInner msg, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
+                                             PutMessageContext putMessageContext) {
         return appendMessagesInner(msg, cb, putMessageContext);
     }
 
@@ -277,7 +272,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
      */
     @Override
     public AppendMessageResult appendMessages(final MessageExtBatch messageExtBatch, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
+                                              PutMessageContext putMessageContext) {
         return appendMessagesInner(messageExtBatch, cb, putMessageContext);
     }
 
@@ -285,7 +280,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
      * todo 添加消息具体实现
      */
     public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
-        PutMessageContext putMessageContext) {
+                                                   PutMessageContext putMessageContext) {
         assert messageExt != null;
         assert cb != null;
 
@@ -300,12 +295,12 @@ public class DefaultMappedFile extends AbstractMappedFile {
                 // todo 批量消息处理
                 // traditional batch message
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBatch) messageExt, putMessageContext);
+                        (MessageExtBatch) messageExt, putMessageContext);
             } else if (messageExt instanceof MessageExtBrokerInner) {
                 // todo 单条消息处理 写入到 CommitLog
                 // traditional single message or newly introduced inner-batch message
                 result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
-                    (MessageExtBrokerInner) messageExt, putMessageContext);
+                        (MessageExtBrokerInner) messageExt, putMessageContext);
             } else {
                 return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
             }
@@ -398,6 +393,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
 
     /**
      * @return The current flushed position
+     * todo 刷新到磁盘
      */
     @Override
     public int flush(final int flushLeastPages) {
@@ -534,11 +530,11 @@ public class DefaultMappedFile extends AbstractMappedFile {
                 return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
             } else {
                 log.warn("matched, but hold failed, request pos: " + pos + ", fileFromOffset: "
-                    + this.fileFromOffset);
+                        + this.fileFromOffset);
             }
         } else {
             log.warn("selectMappedBuffer request pos invalid, request pos: " + pos + ", size: " + size
-                + ", fileFromOffset: " + this.fileFromOffset);
+                    + ", fileFromOffset: " + this.fileFromOffset);
         }
 
         return null;
@@ -566,13 +562,13 @@ public class DefaultMappedFile extends AbstractMappedFile {
     public boolean cleanup(final long currentRef) {
         if (this.isAvailable()) {
             log.error("this file[REF:" + currentRef + "] " + this.fileName
-                + " have not shutdown, stop unmapping.");
+                    + " have not shutdown, stop unmapping.");
             return false;
         }
 
         if (this.isCleanupOver()) {
             log.error("this file[REF:" + currentRef + "] " + this.fileName
-                + " have cleanup, do not do it again.");
+                    + " have cleanup, do not do it again.");
             return true;
         }
 
@@ -598,10 +594,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
                 long beginTime = System.currentTimeMillis();
                 boolean result = this.file.delete();
                 log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
-                    + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
-                    + this.getFlushedPosition() + ", "
-                    + UtilAll.computeElapsedTimeMilliseconds(beginTime)
-                    + "," + (System.currentTimeMillis() - lastModified));
+                        + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"
+                        + this.getFlushedPosition() + ", "
+                        + UtilAll.computeElapsedTimeMilliseconds(beginTime)
+                        + "," + (System.currentTimeMillis() - lastModified));
             } catch (Exception e) {
                 log.warn("close file channel " + this.fileName + " Failed. ", e);
             }
@@ -609,7 +605,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
             return true;
         } else {
             log.warn("destroy mapped file[REF:" + this.getRefCount() + "] " + this.fileName
-                + " Failed. cleanupOver: " + this.cleanupOver);
+                    + " Failed. cleanupOver: " + this.cleanupOver);
         }
 
         return false;
@@ -671,11 +667,11 @@ public class DefaultMappedFile extends AbstractMappedFile {
         // force flush when prepare load finished
         if (type == FlushDiskType.SYNC_FLUSH) {
             log.info("mapped file warm-up done, force to disk, mappedFile={}, costTime={}",
-                this.getFileName(), System.currentTimeMillis() - beginTime);
+                    this.getFileName(), System.currentTimeMillis() - beginTime);
             mappedByteBuffer.force();
         }
         log.info("mapped file warm-up done. mappedFile={}, costTime={}", this.getFileName(),
-            System.currentTimeMillis() - beginTime);
+                System.currentTimeMillis() - beginTime);
 
         this.mlock();
     }
@@ -947,7 +943,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
                     bufferResult.limit(size);
                     current += size;
                     return new SelectMappedBufferResult(fileFromOffset + current, bufferResult, size,
-                        DefaultMappedFile.this);
+                            DefaultMappedFile.this);
                 }
             }
             return null;
