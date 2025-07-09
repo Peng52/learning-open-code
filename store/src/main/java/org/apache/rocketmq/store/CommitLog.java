@@ -86,7 +86,10 @@ public class CommitLog implements Swappable {
     public static final int CRC32_RESERVED_LEN = MessageConst.PROPERTY_CRC32.length() + 1 + 10 + 1;
     protected final MappedFileQueue mappedFileQueue;
     protected final DefaultMessageStore defaultMessageStore;
-
+    /**
+     * @see DefaultFlushManager
+     * 刷盘管理
+     */
     private final FlushManager flushManager;
     private final ColdDataCheckService coldDataCheckService;
 
@@ -179,7 +182,11 @@ public class CommitLog implements Swappable {
         return result;
     }
 
+    /**
+     * todo CommitLog 启动
+     */
     public void start() {
+        //todo  刷盘线程启动
         this.flushManager.start();
         log.info("start commitLog successfully. storeRoot: {}", this.defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
         flushDiskWatcher.setDaemon(true);
@@ -188,7 +195,9 @@ public class CommitLog implements Swappable {
             this.coldDataCheckService.start();
         }
     }
-
+    /**
+     * todo CommitLog 停止 关机
+     */
     public void shutdown() {
         this.flushManager.shutdown();
         log.info("shutdown commitLog successfully. storeRoot: {}", this.defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());

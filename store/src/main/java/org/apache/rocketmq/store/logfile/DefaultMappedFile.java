@@ -168,6 +168,7 @@ public class DefaultMappedFile extends AbstractMappedFile {
         try {
             // fileSize = 1G, 直接映射了1G内存
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+            // todo 设置 position = 0
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();

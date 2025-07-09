@@ -13,6 +13,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * @author : pengcheng
@@ -290,4 +291,21 @@ public class _06_12_Test {
         System.out.println(position1);
     }
 
+
+    private PriorityBlockingQueue<Long> requestQueue =
+            new PriorityBlockingQueue<>();
+
+    /**
+     * MappedFile
+     */
+    @Test
+    public void testMappedFiled() throws InterruptedException {
+        requestQueue.add(1111L);
+
+        for (int i = 0; i < 1000; i++) {
+            //  requestQueue.take() 没有元素的时候会阻塞等待
+            System.out.println(requestQueue.take());
+        }
+
+    }
 }

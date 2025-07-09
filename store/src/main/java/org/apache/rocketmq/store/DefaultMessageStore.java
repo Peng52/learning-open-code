@@ -402,9 +402,9 @@ public class DefaultMessageStore implements MessageStore {
             this.transientStorePool.init();
         }
 
-        // todo 启动线程
+        // todo 创建 MappedFile启动服务
         this.allocateMappedFileService.start();
-
+        // todo index 文件 服务 线程启动
         this.indexService.start();
 
         lock = lockFile.getChannel().tryLock(0, 1, false);
@@ -423,6 +423,7 @@ public class DefaultMessageStore implements MessageStore {
         this.doRecheckReputOffsetFromCq();
 
         this.flushConsumeQueueService.start();
+        // todo commitlog 启动
         this.commitLog.start();
         this.consumeQueueStore.start();
         this.storeStatsService.start();
