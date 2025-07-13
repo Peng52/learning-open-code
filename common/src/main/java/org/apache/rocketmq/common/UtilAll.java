@@ -103,7 +103,9 @@ public class UtilAll {
 
         return sb.toString();
     }
-
+    /**
+     * 获取固定长度(20)的文件名
+     */
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);

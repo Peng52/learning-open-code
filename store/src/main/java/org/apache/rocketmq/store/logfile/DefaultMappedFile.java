@@ -53,6 +53,15 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+/**
+ * MappedFile: MappedFile 主要提供以下功能：
+ * 1. 内存映射文件的核心实现，负责管理内存映射文件和提供高效的文件读写操作
+ * 文件内存映射
+ * 消息写入
+ * 消息读取
+ * 文件刷盘
+ * 文件清理
+ */
 public class DefaultMappedFile extends AbstractMappedFile {
     public static final int OS_PAGE_SIZE = 1024 * 4;
     public static final Unsafe UNSAFE = getUnsafe();
@@ -72,6 +81,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
     protected volatile int wrotePosition;
     protected volatile int committedPosition;
     protected volatile int flushedPosition;
+    /**
+     * todo 这里的 fileSize 就是 1G 文件的大小
+     */
     protected int fileSize;
     protected FileChannel fileChannel;
     /**
@@ -512,6 +524,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
         FLUSHED_POSITION_UPDATER.set(this, pos);
     }
 
+    /**
+     * MappedFile 判断文件是否写满了   写指针 == fileSie (1G)
+     */
     @Override
     public boolean isFull() {
         return this.fileSize == WROTE_POSITION_UPDATER.get(this);
@@ -559,6 +574,10 @@ public class DefaultMappedFile extends AbstractMappedFile {
         return null;
     }
 
+    /**
+     * todo 资源清理，释放 堆外内存
+     * 1. 他这里的堆外内存释放使用的 Netty的一个工具类
+     */
     @Override
     public boolean cleanup(final long currentRef) {
         if (this.isAvailable()) {

@@ -62,6 +62,7 @@ public class MappedFileQueue implements Swappable {
     // todo MappedFile实现类 DefaultMappedFile
     protected final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<>();
 
+    // todo MappedFile 创建分配类
     protected final AllocateMappedFileService allocateMappedFileService;
     // todo 刷新到磁盘的指针position
     protected long flushedWhere = 0;
@@ -326,10 +327,12 @@ public class MappedFileQueue implements Swappable {
         MappedFile mappedFileLast = getLastMappedFile();
 
         if (mappedFileLast == null) {
+            // todo 确保每个文件的起始偏移都是 mappedFileSize 的整数倍  mappedFileSize = 1G 整数倍
             createOffset = startOffset - (startOffset % this.mappedFileSize);
         }
 
         if (mappedFileLast != null && mappedFileLast.isFull()) {
+            // 获取到commitLog 但是已经满了。从文件名 + 1G 大小
             createOffset = mappedFileLast.getFileFromOffset() + this.mappedFileSize;
         }
 
@@ -371,16 +374,21 @@ public class MappedFileQueue implements Swappable {
      * todo 尝试创建 MappedFile
      */
     public MappedFile tryCreateMappedFile(long createOffset) {
+        // createOffset 物理偏移量就会作为 文件名
         String nextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset);
         String nextNextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset
                 + this.mappedFileSize);
         return doCreateMappedFile(nextFilePath, nextNextFilePath);
     }
 
+    /**
+     * todo 创建文件
+     */
     protected MappedFile doCreateMappedFile(String nextFilePath, String nextNextFilePath) {
         MappedFile mappedFile = null;
 
         if (this.allocateMappedFileService != null) {
+            // todo 创建文件
             mappedFile = this.allocateMappedFileService.putRequestAndReturnMappedFile(nextFilePath,
                     nextNextFilePath, this.mappedFileSize);
         } else {
@@ -410,7 +418,7 @@ public class MappedFileQueue implements Swappable {
         while (!this.mappedFiles.isEmpty()) {
             try {
                 // todo 什么时候不是 isEmpty()
-                // todo 就是取 最后 mappedFile 文件
+                // todo 就是取 最后一个 mappedFile 文件
                 mappedFileLast = this.mappedFiles.get(this.mappedFiles.size() - 1);
                 break;
             } catch (IndexOutOfBoundsException e) {

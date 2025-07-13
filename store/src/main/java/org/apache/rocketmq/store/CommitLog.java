@@ -991,7 +991,7 @@ public class CommitLog implements Swappable {
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.IN_SYNC_REPLICAS_NOT_ENOUGH, null));
             }
         }
-        // todo topic 加锁了
+        // todo topic 加锁了 (针对每个 topic key)
         topicQueueLock.lock(topicQueueKey);
         try {
 
@@ -1010,7 +1010,7 @@ public class CommitLog implements Swappable {
             }
             msg.setEncodedBuff(putMessageThreadLocal.getEncoder().getEncoderBuffer());
             PutMessageContext putMessageContext = new PutMessageContext(topicQueueKey);
-            // todo 加锁 (自旋、或者可重入锁)
+            // todo 加锁 (自旋、或者可重入锁) 这个是全局唯一的锁
             putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
             try {
                 long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();

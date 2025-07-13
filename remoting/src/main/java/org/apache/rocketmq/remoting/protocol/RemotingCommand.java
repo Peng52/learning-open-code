@@ -381,6 +381,7 @@ public class RemotingCommand {
         return name;
     }
 
+    //todo pengcheng: 消息编码 即 转成 byte
     public ByteBuffer encode() {
         // 1> header length size
         int length = 4;

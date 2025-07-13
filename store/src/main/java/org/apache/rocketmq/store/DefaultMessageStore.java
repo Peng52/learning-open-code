@@ -114,7 +114,34 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.store.timer.TimerMessageStore;
 import org.apache.rocketmq.store.util.PerfCounter;
 import org.rocksdb.RocksDBException;
-
+/**
+ * 以下是对DefaultMessageStore类的关键分析点：
+ * 1. **核心组件**：
+ *    - **CommitLog**：存储消息的原始数据，所有消息都顺序写入CommitLog文件。
+ *    - **ConsumeQueue**：消息消费队列，为每个主题的每个消息队列建立索引，方便消费者快速拉取消息。
+ *    - **IndexService**：提供消息索引服务，支持按关键字、时间等维度查询消息。
+ *    - **存储服务**（如AllocateMappedFileService）：负责MappedFile的分配和回收。
+ *    - **刷盘服务**（FlushCommitLogService）：负责将内存中的消息数据刷写到磁盘。
+ *    - **主从同步**（HAService）：如果开启了主从模式，负责主从同步。
+ * 2. **消息存储流程**：
+ *    - 消息到达时，首先追加到CommitLog（内存映射文件）。
+ *    - 然后异步构建ConsumeQueue和Index文件。
+ * 3. **关键方法**：
+ *    - `putMessage(MessageExtBrokerInner)`：存储消息的核心方法。
+ *    - `getMessage()`：获取消息的方法。
+ *    - `asyncPutMessage()`：异步存储消息。
+ * 4. **刷盘策略**：
+ *    - 同步刷盘：消息写入内存后，立即刷盘，然后返回。
+ *    - 异步刷盘：消息写入内存后立即返回，由后台线程定时刷盘。
+ * 5. **故障恢复**：
+ *    - 通过`recover()`方法在启动时恢复未刷盘的数据。
+ * 6. **定时任务**：
+ *    - 如定期删除过期文件、检查存储状态等。
+ * 7. **配置管理**：
+ *    - 通过`MessageStoreConfig`获取配置信息。
+ * 8. **线程模型**：
+ *    - 使用多个线程池处理不同的任务（如刷盘、复制、构建索引等）。
+ */
 public class DefaultMessageStore implements MessageStore {
     protected static final Logger LOGGER = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     protected static final Logger ERROR_LOG = LoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
@@ -656,12 +683,13 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public PutMessageResult putMessage(MessageExtBrokerInner msg) {
-        // todo 保存消息
+        // todo 保存消息 单个消息
         return waitForPutResult(asyncPutMessage(msg));
     }
 
     @Override
     public PutMessageResult putMessages(MessageExtBatch messageExtBatch) {
+        // todo 保存消息 批量保存消息
         return waitForPutResult(asyncPutMessages(messageExtBatch));
     }
 
