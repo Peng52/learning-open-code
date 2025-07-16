@@ -427,10 +427,11 @@ public class DefaultMappedFile extends AbstractMappedFile {
                 } catch (Throwable e) {
                     log.error("Error occurred when force data to disk.", e);
                 }
-
+                // todo 设置最新的 flush 刷盘的 position
                 FLUSHED_POSITION_UPDATER.set(this, value);
                 this.release();
             } else {
+                // todo 设置最新的 flush 刷盘的 position
                 log.warn("in flush, hold failed, flush offset = " + FLUSHED_POSITION_UPDATER.get(this));
                 FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
             }

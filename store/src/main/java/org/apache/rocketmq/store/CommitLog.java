@@ -1100,6 +1100,7 @@ public class CommitLog implements Swappable {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).add(result.getMsgNum());
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).add(result.getWroteBytes());
 
+        // todo 刷盘 (因为可能配置了，同步刷盘的策略)
         return handleDiskFlushAndHA(putMessageResult, msg, needAckNums, needHandleHA);
     }
 
@@ -1297,6 +1298,7 @@ public class CommitLog implements Swappable {
 
     private CompletableFuture<PutMessageResult> handleDiskFlushAndHA(PutMessageResult putMessageResult,
         MessageExt messageExt, int needAckNums, boolean needHandleHA) {
+        // todo 同步刷盘动作
         CompletableFuture<PutMessageStatus> flushResultFuture = handleDiskFlush(putMessageResult.getAppendMessageResult(), messageExt);
         CompletableFuture<PutMessageStatus> replicaResultFuture;
         if (!needHandleHA) {
@@ -1305,6 +1307,7 @@ public class CommitLog implements Swappable {
             replicaResultFuture = handleHA(putMessageResult.getAppendMessageResult(), putMessageResult, needAckNums);
         }
 
+        // todo thenCombine()使用
         return flushResultFuture.thenCombine(replicaResultFuture, (flushStatus, replicaStatus) -> {
             if (flushStatus != PutMessageStatus.PUT_OK) {
                 putMessageResult.setPutMessageStatus(flushStatus);
@@ -1654,6 +1657,7 @@ public class CommitLog implements Swappable {
             } finally {
                 lock.unlock();
             }
+            //todo pengcheng: 这种 wakeup() 咋用的，好多地方都用了。
             this.wakeup();
         }
 
@@ -1673,6 +1677,7 @@ public class CommitLog implements Swappable {
                 for (GroupCommitRequest req : this.requestsRead) {
                     boolean flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
                     for (int i = 0; i < 1000 && !flushOK; i++) {
+                        // todo 刷盘
                         CommitLog.this.mappedFileQueue.flush(0);
                         flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
                         if (flushOK) {
@@ -1749,6 +1754,8 @@ public class CommitLog implements Swappable {
             return 1000 * 60 * 5;
         }
     }
+
+    /*————————————————————————————————————————————————————————————————————————————————————————*/
 
     class GroupCheckService extends FlushCommitLogService {
         private volatile List<GroupCommitRequest> requestsWrite = new ArrayList<>();
@@ -2223,13 +2230,17 @@ public class CommitLog implements Swappable {
             }
         }
 
+        /**
+         * todo 同步磁盘  (刷盘动作)
+         */
         @Override
         public CompletableFuture<PutMessageStatus> handleDiskFlush(AppendMessageResult result, MessageExt messageExt) {
-            // Synchronization flush
+            // Synchronization flush todo 同步刷盘
             if (FlushDiskType.SYNC_FLUSH == CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
                 final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
                 if (messageExt.isWaitStoreMsgOK()) {
                     GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
+                    // todo 牛逼这里的设计
                     flushDiskWatcher.add(request);
                     service.putRequest(request);
                     return request.future();
@@ -2238,7 +2249,7 @@ public class CommitLog implements Swappable {
                     return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
                 }
             }
-            // Asynchronous flush
+            // Asynchronous flush todo 异步刷盘
             else {
                 if (!CommitLog.this.defaultMessageStore.isTransientStorePoolEnable()) {
                     flushCommitLogService.wakeup();

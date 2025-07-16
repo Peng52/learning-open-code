@@ -706,6 +706,7 @@ public class MappedFileQueue implements Swappable {
     }
 
     /**
+     * todo 根据offset查找对应的文件，因为刷盘的offfset 不一定是最后一个文件。
      * Finds a mapped file by offset.
      *
      * @param offset Offset.
@@ -756,11 +757,15 @@ public class MappedFileQueue implements Swappable {
         return null;
     }
 
+    /**
+     * todo 找到第一个文件
+     */
     public MappedFile getFirstMappedFile() {
         MappedFile mappedFileFirst = null;
 
         if (!this.mappedFiles.isEmpty()) {
             try {
+                // todo 获取第一个文件
                 mappedFileFirst = this.mappedFiles.get(0);
             } catch (IndexOutOfBoundsException e) {
                 //ignore
