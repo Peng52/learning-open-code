@@ -66,6 +66,7 @@ public class MappedFileQueue implements Swappable {
     protected final AllocateMappedFileService allocateMappedFileService;
     // todo 刷新到磁盘的指针position
     protected long flushedWhere = 0;
+    // todo commitWhere 是什么
     protected long committedWhere = 0;
 
     protected volatile long storeTimestamp = 0;
@@ -683,6 +684,7 @@ public class MappedFileQueue implements Swappable {
             int offset = mappedFile.flush(flushLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.getFlushedWhere();
+            // todo 更新刷盘的位置
             this.setFlushedWhere(where);
             if (0 == flushLeastPages) {
                 this.setStoreTimestamp(tmpTimeStamp);
@@ -694,8 +696,10 @@ public class MappedFileQueue implements Swappable {
 
     public synchronized boolean commit(final int commitLeastPages) {
         boolean result = true;
+        // todo 也是找到 commit 文件的位置
         MappedFile mappedFile = this.findMappedFileByOffset(this.getCommittedWhere(), this.getCommittedWhere() == 0);
         if (mappedFile != null) {
+            // todo 调用文件 commit 方法
             int offset = mappedFile.commit(commitLeastPages);
             long where = mappedFile.getFileFromOffset() + offset;
             result = where == this.getCommittedWhere();

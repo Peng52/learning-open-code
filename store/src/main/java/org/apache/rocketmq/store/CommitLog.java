@@ -189,6 +189,7 @@ public class CommitLog implements Swappable {
         //todo  刷盘线程启动
         this.flushManager.start();
         log.info("start commitLog successfully. storeRoot: {}", this.defaultMessageStore.getMessageStoreConfig().getStorePathRootDir());
+        //todo 启动后台线程
         flushDiskWatcher.setDaemon(true);
         flushDiskWatcher.start();
         if (this.coldDataCheckService != null) {
@@ -208,6 +209,7 @@ public class CommitLog implements Swappable {
     }
 
     public long flush() {
+        //todo pengcheng: 为什么这里填入 0
         this.mappedFileQueue.commit(0);
         this.mappedFileQueue.flush(0);
         return this.mappedFileQueue.getFlushedWhere();
@@ -2199,6 +2201,7 @@ public class CommitLog implements Swappable {
         @Override
         public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult,
             MessageExt messageExt) {
+            // todo 同步刷盘
             // Synchronization flush
             if (FlushDiskType.SYNC_FLUSH == CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
                 final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;

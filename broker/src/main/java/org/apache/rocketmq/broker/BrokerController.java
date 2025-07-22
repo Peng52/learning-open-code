@@ -787,6 +787,9 @@ public class BrokerController {
         return result;
     }
 
+    /**
+     * todo 初始化 MessageStore
+     */
     public boolean initializeMessageStore() {
         boolean result = true;
         try {
@@ -794,6 +797,7 @@ public class BrokerController {
             if (this.messageStoreConfig.isEnableRocksDBStore()) {
                 defaultMessageStore = new RocksDBMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig, topicConfigManager.getTopicConfigTable());
             } else {
+                // todo
                 defaultMessageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig, topicConfigManager.getTopicConfigTable());
                 if (messageStoreConfig.isRocksdbCQDoubleWriteEnable()) {
                     defaultMessageStore.enableRocksdbCQWrite();

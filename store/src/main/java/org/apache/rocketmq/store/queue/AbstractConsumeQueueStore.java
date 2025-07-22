@@ -33,6 +33,7 @@ public abstract class AbstractConsumeQueueStore implements ConsumeQueueStoreInte
     protected final DefaultMessageStore messageStore;
     protected final MessageStoreConfig messageStoreConfig;
     protected final QueueOffsetOperator queueOffsetOperator = new QueueOffsetOperator();
+    // <TopicTest,<queueId,ConsumeQueue>>
     protected final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueueInterface>> consumeQueueTable;
 
     public AbstractConsumeQueueStore(DefaultMessageStore messageStore) {

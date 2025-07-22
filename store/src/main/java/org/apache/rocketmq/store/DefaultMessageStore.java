@@ -250,6 +250,7 @@ public class DefaultMessageStore implements MessageStore {
         this.aliveReplicasNum = messageStoreConfig.getTotalReplicas();
         this.brokerStatsManager = brokerStatsManager;
         this.topicConfigTable = topicConfigTable;
+        // todo MappedFile文件创建
         this.allocateMappedFileService = new AllocateMappedFileService(this);
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
             this.commitLog = new DLedgerCommitLog(this);
@@ -257,7 +258,7 @@ public class DefaultMessageStore implements MessageStore {
             //todo 创建 CommitLog
             this.commitLog = new CommitLog(this);
         }
-
+        // todo ConsumeQueue 消息队列
         this.consumeQueueStore = createConsumeQueueStore();
 
         this.flushConsumeQueueService = createFlushConsumeQueueService();
@@ -265,6 +266,7 @@ public class DefaultMessageStore implements MessageStore {
         this.cleanConsumeQueueService = createCleanConsumeQueueService();
         this.correctLogicOffsetService = createCorrectLogicOffsetService();
         this.storeStatsService = new StoreStatsService(getBrokerIdentity());
+        // todo 索引文件
         this.indexService = new IndexService(this);
 
         if (!messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
@@ -309,6 +311,9 @@ public class DefaultMessageStore implements MessageStore {
         parseDelayLevel();
     }
 
+    /**
+     * todo 创建 ConsumerQueueStore
+     */
     public ConsumeQueueStoreInterface createConsumeQueueStore() {
         return new ConsumeQueueStore(this);
     }
@@ -376,6 +381,7 @@ public class DefaultMessageStore implements MessageStore {
             // todo load Commit Log ; 加载 CommitLog 文件
             result = this.commitLog.load();
 
+            // todo load ConsumeQueue 消费队列
             // load Consume Queue
             result = result && this.consumeQueueStore.load();
 
@@ -2026,6 +2032,7 @@ public class DefaultMessageStore implements MessageStore {
 
     public void doDispatch(DispatchRequest req) throws RocksDBException {
         for (CommitLogDispatcher dispatcher : this.dispatcherList) {
+            // todo commitLog 保存的消息，多个实现类，
             dispatcher.dispatch(req);
         }
     }
@@ -2034,6 +2041,7 @@ public class DefaultMessageStore implements MessageStore {
      * @param dispatchRequest
      * @throws RocksDBException only in rocksdb mode
      */
+    //todo pengcheng:  保存到 commitLog 中去
     protected void putMessagePositionInfo(DispatchRequest dispatchRequest) throws RocksDBException {
         this.consumeQueueStore.putMessagePositionInfoWrapper(dispatchRequest);
     }
@@ -2202,6 +2210,8 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+
+    //todo pengcheng:  消费 commitLog , 构建 ConsumeQueue
     class CommitLogDispatcherBuildConsumeQueue implements CommitLogDispatcher {
 
         @Override
@@ -2210,6 +2220,7 @@ public class DefaultMessageStore implements MessageStore {
             switch (tranType) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                    //todo pengcheng: 保存到 consumeQueue 中
                     putMessagePositionInfo(request);
                     break;
                 case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
@@ -2219,6 +2230,7 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    //todo pengcheng: 消费 CommitLog 构建 Index
     class CommitLogDispatcherBuildIndex implements CommitLogDispatcher {
 
         @Override
@@ -2873,6 +2885,9 @@ public class DefaultMessageStore implements MessageStore {
             return DefaultMessageStore.this.getMessageStoreConfig().isReadUnCommitted() ? DefaultMessageStore.this.commitLog.getMaxOffset() : DefaultMessageStore.this.commitLog.getConfirmOffset();
         }
 
+        /**
+         * todo 读取CommitLog 更新 consumerQueue / index 文件
+         */
         public void doReput() {
             if (this.reputFromOffset < DefaultMessageStore.this.commitLog.getMinOffset()) {
                 LOGGER.warn("The reputFromOffset={} is smaller than minPyOffset={}, this usually indicate that the dispatch behind too much and the commitlog has expired.",
@@ -2984,6 +2999,7 @@ public class DefaultMessageStore implements MessageStore {
 
             while (!this.isStopped()) {
                 try {
+                    // 休息1毫秒
                     TimeUnit.MILLISECONDS.sleep(1);
                     this.doReput();
                 } catch (Throwable e) {

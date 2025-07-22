@@ -41,6 +41,9 @@ import org.apache.rocketmq.store.queue.MultiDispatchUtils;
 import org.apache.rocketmq.store.queue.QueueOffsetOperator;
 import org.apache.rocketmq.store.queue.ReferredIterator;
 
+/**
+ * todo 消息队列 ConsumeQueue
+ */
 public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -77,6 +80,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
     private volatile long minLogicOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
 
+    /**
+     * todo ConsumeQueue 消息队列
+     */
     public ConsumeQueue(
         final String topic,
         final int queueId,
@@ -217,6 +223,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return binarySearchInQueueByTime(mappedFile, timestamp, boundaryType);
     }
 
+    /**
+     * todo 查找时间， 二分搜索法
+     */
     private long binarySearchInQueueByTime(final MappedFile mappedFile, final long timestamp,
         BoundaryType boundaryType) {
         if (mappedFile != null) {
@@ -673,6 +682,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return this.minLogicOffset / CQ_STORE_UNIT_SIZE;
     }
 
+    /**
+     * todo 将CommitLog 相关信息；构成中 Unit 保存到 ConsumeQueue 文件中去
+     */
     @Override
     public void putMessagePositionInfoWrapper(DispatchRequest request) {
         final int maxRetries = 30;
@@ -861,6 +873,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         }
     }
 
+    /**
+     * todo 根据startIndex 查找消息
+     */
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
         int mappedFileSize = this.mappedFileSize;
         long offset = startIndex * CQ_STORE_UNIT_SIZE;
@@ -873,6 +888,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         return null;
     }
 
+    /**
+     * todo 这里 根据 offset 找 CqUnit 20个
+     */
     @Override
     public ReferredIterator<CqUnit> iterateFrom(long startOffset) {
         SelectMappedBufferResult sbr = getIndexBuffer(startOffset);
@@ -968,9 +986,9 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             }
             long queueOffset = (sbr.getStartOffset() + sbr.getByteBuffer().position() - relativePos) / CQ_STORE_UNIT_SIZE;
             CqUnit cqUnit = new CqUnit(queueOffset,
-                sbr.getByteBuffer().getLong(),
-                sbr.getByteBuffer().getInt(),
-                sbr.getByteBuffer().getLong());
+                sbr.getByteBuffer().getLong(), // 8字节
+                sbr.getByteBuffer().getInt(), // 4 字节
+                sbr.getByteBuffer().getLong());// 8字节
 
             if (isExtAddr(cqUnit.getTagsCode())) {
                 ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();

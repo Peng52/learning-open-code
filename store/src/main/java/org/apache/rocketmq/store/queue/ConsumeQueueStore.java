@@ -52,6 +52,10 @@ import static java.lang.String.format;
 import static org.apache.rocketmq.store.config.StorePathConfigHelper.getStorePathBatchConsumeQueue;
 import static org.apache.rocketmq.store.config.StorePathConfigHelper.getStorePathConsumeQueue;
 
+
+/**
+ * todo ConsumerQueue 消息队列
+ */
 public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     public ConsumeQueueStore(DefaultMessageStore messageStore) {
@@ -194,6 +198,9 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
         return fileQueueLifeCycle.load();
     }
 
+    /**
+     * 加载 消费队列 文件
+     */
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
         File dirLogic = new File(storePath);
         File[] fileTopicList = dirLogic.listFiles();
@@ -213,8 +220,9 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                         }
 
                         queueTypeShouldBe(topic, cqType);
-
+                        // todo new ConsumeQueue 实例对象
                         ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+                        // todo 添加到缓存中  <TopicTest, <queueId, ConsumeQueue>> 
                         this.putConsumeQueue(topic, queueId, logic);
                         if (!this.load(logic)) {
                             return false;
