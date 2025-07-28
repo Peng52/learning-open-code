@@ -2032,7 +2032,7 @@ public class DefaultMessageStore implements MessageStore {
 
     public void doDispatch(DispatchRequest req) throws RocksDBException {
         for (CommitLogDispatcher dispatcher : this.dispatcherList) {
-            // todo commitLog 保存的消息，多个实现类，
+            // todo commitLog 保存的消息，多个实现类， 分发
             dispatcher.dispatch(req);
         }
     }
@@ -2887,6 +2887,7 @@ public class DefaultMessageStore implements MessageStore {
 
         /**
          * todo 读取CommitLog 更新 consumerQueue / index 文件
+         * 1. ConsumeQueue的刷盘方式固定为异步刷盘。
          */
         public void doReput() {
             if (this.reputFromOffset < DefaultMessageStore.this.commitLog.getMinOffset()) {
