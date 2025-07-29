@@ -90,9 +90,9 @@ public class Producer {
                 SendResult sendResult = producer.send(msg, 20 * 1000);
 
                 // 2.发送批量消息
-                List<Message> batchMessage = new ArrayList<>();
+               /* List<Message> batchMessage = new ArrayList<>();
                 SendResult batchSendResult = producer.send(batchMessage);
-
+*/
                 // 3.发送异步消息
                 producer.send(msg, new SendCallback() {
                     @Override

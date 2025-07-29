@@ -25,9 +25,14 @@ import org.rocksdb.RocksDBException;
 public interface CommitLogDispatcher {
 
     /**
-     *  Dispatch messages from store to build consume queues, indexes, and filter data
+     * Dispatch messages from store to build consume queues, indexes, and filter data
+     *
      * @param request dispatch message request
      * @throws RocksDBException only in rocksdb mode
+     *                          todo ConsumeQueue 消费队列
+     * @see org.apache.rocketmq.store.DefaultMessageStore.CommitLogDispatcherBuildConsumeQueue
+     * todo 构建 Index
+     * @see org.apache.rocketmq.store.DefaultMessageStore.CommitLogDispatcherBuildIndex
      */
     void dispatch(final DispatchRequest request) throws RocksDBException;
 }

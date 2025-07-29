@@ -705,6 +705,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
                         topic, queueId, request.getCommitLogOffset());
                 }
             }
+            // todo 保存消息
             boolean result = this.putMessagePositionInfo(request.getCommitLogOffset(),
                 request.getMsgSize(), tagsCode, request.getConsumeQueueOffset());
             if (result) {
@@ -811,7 +812,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         this.byteBufferIndex.putLong(tagsCode);
 
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
-
+        // todo 找到写入的ConsumeQueue
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
         if (mappedFile != null) {
 
@@ -847,10 +848,13 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
             this.setMaxPhysicOffset(offset + size);
             boolean appendResult;
             if (messageStore.getMessageStoreConfig().isPutConsumeQueueDataByFileChannel()) {
+                // todo 写入 ConsumeQueue
+                // this.byteBufferIndex.array() 写入的数据byte[]数组
                 appendResult = mappedFile.appendMessageUsingFileChannel(this.byteBufferIndex.array());
             } else {
                 appendResult = mappedFile.appendMessage(this.byteBufferIndex.array());
             }
+            // todo appendResult = false 表示写入文件失败
             return appendResult;
         }
         return false;
