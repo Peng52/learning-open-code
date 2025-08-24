@@ -336,6 +336,7 @@ public class CommitLog implements Swappable {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
+     * todo 服务正常退出，并且所有数据已经flush
      *
      * @throws RocksDBException only in rocksdb mode
      */

@@ -39,6 +39,10 @@ public class StorePathConfigHelper {
         return rootDir + File.separator + "checkpoint";
     }
 
+    /**
+     * todo 标记性文件
+     * 正常退出时，会删除 abort 文件
+     */
     public static String getAbortFile(final String rootDir) {
         return rootDir + File.separator + "abort";
     }
