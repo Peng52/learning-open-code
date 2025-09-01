@@ -16,12 +16,16 @@
  */
 package org.apache.rocketmq.client.consumer.rebalance;
 
+import org.apache.rocketmq.common.message.MessageQueue;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.rocketmq.common.message.MessageQueue;
 
 /**
  * Average Hashing queue algorithm
+ * 1.它是 RocketMQ 消费者负载均衡策略的核心实现之一，体现了“平均主义”的分配思想。
+ * 2.核心职责：为消费者组内的每个消费者实例，平均地分配当前订阅主题下的所有消息队列（MessageQueue）。
+ * 3.设计思想：追求绝对的公平，尽可能让每个消费者实例处理相同数量的队列，从而理论上分担相同的负载。
  */
 public class AllocateMessageQueueAveragely extends AbstractAllocateMessageQueueStrategy {
 

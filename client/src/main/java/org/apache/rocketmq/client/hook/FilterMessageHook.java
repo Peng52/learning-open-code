@@ -16,6 +16,15 @@
  */
 package org.apache.rocketmq.client.hook;
 
+/**
+ * FilterMessageHook 是 RocketMQ
+ * 提供的一个非常灵活的客户端拦截器扩展点。
+ * 它允许开发者在消息消费前插入自定义逻辑，主要用于：
+ * 审计与监控
+ * 动态消息过滤
+ * 安全控制
+ * 消息采样
+ */
 public interface FilterMessageHook {
     String hookName();
 
