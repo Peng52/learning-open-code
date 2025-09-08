@@ -238,6 +238,10 @@ public class PullAPIWrapper {
                 brokerAddr = computePullFromWhichFilterServer(mq.getTopic(), brokerAddr);
             }
 
+            /**
+             * todo 向Broker发送消息，拉取消息
+             * @see PullResult 拉取消息的结果
+             */
             PullResult pullResult = this.mQClientFactory.getMQClientAPIImpl().pullMessage(
                 brokerAddr,
                 requestHeader,

@@ -25,6 +25,11 @@ package org.apache.rocketmq.remoting.protocol.heartbeat;
  */
 public enum MessageModel {
     /**
+     * 1.​​广播模式​​：消费进度存储在消费者本地
+     * 2. 集群模式​​：消费进度存储在Broker端，供所有消费者共享
+     */
+    
+    /**
      * broadcast
      */
     BROADCASTING("BROADCASTING"),

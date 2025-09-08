@@ -102,9 +102,13 @@ public class PullMessageService extends ServiceThread {
         return scheduledExecutorService;
     }
 
+    /**
+     * todo 拉取消息； 主动拉取消息，实现消息的推送
+     */
     private void pullMessage(final PullRequest pullRequest) {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
         if (consumer != null) {
+            // todo MQ 推送消费者
             DefaultMQPushConsumerImpl impl = (DefaultMQPushConsumerImpl) consumer;
             impl.pullMessage(pullRequest);
         } else {
@@ -122,16 +126,22 @@ public class PullMessageService extends ServiceThread {
         }
     }
 
+
+    /**
+     * todo 线程循环拉取消息
+     */
     @Override
     public void run() {
         logger.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
             try {
+                // todo 为什么需要这个？
                 MessageRequest messageRequest = this.messageRequestQueue.take();
                 if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
                     this.popMessage((PopRequest) messageRequest);
                 } else {
+                    // todo 拉取消息
                     this.pullMessage((PullRequest) messageRequest);
                 }
             } catch (InterruptedException ignored) {

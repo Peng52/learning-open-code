@@ -60,6 +60,7 @@ import java.util.Set;
  * <p>
  * <strong>Thread Safety:</strong> After initialization, the instance can be regarded as thread-safe.
  * </p>
+ * todo: 消息Push消费者 ：消费者客户端实现类
  */
 public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer {
 
@@ -723,11 +724,16 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * This method gets internal infrastructure readily to serve. Instances must call this method after configuration.
      *
      * @throws MQClientException if there is any client error.
+     * todo 启动消费者
      */
     @Override
     public void start() throws MQClientException {
+        // 实现​​多租户隔离​​。RocketMQ 通过命名空间（Namespace）来隔离不同环境（如dev, test, prod）或不同业务的消息资源，
+        // 避免重复的 Group 名或 Topic 名产生冲突
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
+        // todo 消息推送启动入口
         this.defaultMQPushConsumerImpl.start();
+        // todo 是否开启消息追踪
         if (enableTrace) {
             try {
                 AsyncTraceDispatcher dispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, getTraceMsgBatchNum(), traceTopic, rpcHook);

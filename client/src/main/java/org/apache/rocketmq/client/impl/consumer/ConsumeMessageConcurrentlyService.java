@@ -82,6 +82,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         this.cleanExpireMsgExecutors = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("CleanExpireMsgScheduledThread_" + consumerGroupTag));
     }
 
+    /**
+     * todo 启动 并发消息消费
+     */
     public void start() {
         this.cleanExpireMsgExecutors.scheduleAtFixedRate(new Runnable() {
 
@@ -191,6 +194,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         final boolean dispatchToConsume) {
         final int consumeBatchSize = this.defaultMQPushConsumer.getConsumeMessageBatchMaxSize();
         if (msgs.size() <= consumeBatchSize) {
+            // todo 消费消息 (这种设计思路参考， 线程池分发的这种，类实现run()方法)
             ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
             try {
                 this.consumeExecutor.submit(consumeRequest);
@@ -374,6 +378,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             return processQueue;
         }
 
+        
+        /**
+         * todo 消费者线程，开始消费消息
+         */
         @Override
         public void run() {
             if (this.processQueue.isDropped()) {
@@ -381,6 +389,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 return;
             }
 
+            /**
+             * MessageListenerConcurrently 消费者实现监听的消息
+             */
             MessageListenerConcurrently listener = ConsumeMessageConcurrentlyService.this.messageListener;
             ConsumeConcurrentlyContext context = new ConsumeConcurrentlyContext(messageQueue);
             ConsumeConcurrentlyStatus status = null;
@@ -396,6 +407,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 consumeMessageContext.setMq(messageQueue);
                 consumeMessageContext.setMsgList(msgs);
                 consumeMessageContext.setSuccess(false);
+                //todo pengcheng: 调用 HookBefore 方法
                 ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.executeHookBefore(consumeMessageContext);
             }
 
@@ -408,6 +420,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }
+                //todo pengcheng: 这里消息消费入口，
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
                 log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",
@@ -448,6 +461,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 consumeMessageContext.setStatus(status.toString());
                 consumeMessageContext.setSuccess(ConsumeConcurrentlyStatus.CONSUME_SUCCESS == status);
                 consumeMessageContext.setAccessChannel(defaultMQPushConsumer.getAccessChannel());
+                // todo 调用 hook After 方法
                 ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
             }
 

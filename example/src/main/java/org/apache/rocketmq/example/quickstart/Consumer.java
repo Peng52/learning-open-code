@@ -35,6 +35,7 @@ public class Consumer {
 
         /*
          * Instantiate with specified consumer group name.
+         * todo DefaultMQPushConsumer 创建了消费者客户端
          */
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(CONSUMER_GROUP);
 
@@ -64,6 +65,7 @@ public class Consumer {
 
         /*
          *  Register callback to execute on arrival of messages fetched from brokers.
+         *  todo 消息者， 监听消息的消费
          */
         consumer.registerMessageListener((MessageListenerConcurrently) (msg, context) -> {
             System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msg);
@@ -73,6 +75,7 @@ public class Consumer {
         /*
          *  Launch the consumer instance.
          */
+        // todo 启动消费者
         consumer.start();
 
         System.out.printf("Consumer Started.%n");

@@ -876,7 +876,11 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
         sendResult.setTraceOn(!Boolean.FALSE.toString().equals(traceOn));
         return sendResult;
     }
-
+    
+    
+    /**
+     * todo 从 broker 拉取消息
+     */
     public PullResult pullMessage(
         final String addr,
         final PullMessageRequestHeader requestHeader,
@@ -1092,6 +1096,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback, StartAndShutdo
             public void operationSucceed(RemotingCommand response) {
                 try {
                     PullResult pullResult = MQClientAPIImpl.this.processPullResponse(response, addr);
+                    // todo 通过pullCallback回调处理 拉取消息的结果 PullResult
                     pullCallback.onSuccess(pullResult);
                 } catch (Exception e) {
                     pullCallback.onException(e);

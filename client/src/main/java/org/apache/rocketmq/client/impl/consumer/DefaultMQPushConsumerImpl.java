@@ -253,6 +253,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         pullRequest.getProcessQueue().setLastPullTimestamp(System.currentTimeMillis());
 
         try {
+            // 判断当前消费者状态是否正常
             this.makeSureStateOK();
         } catch (MQClientException e) {
             log.warn("pullMessage exception, consumer state not ok", e);
@@ -342,7 +343,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
         final long beginTimestamp = System.currentTimeMillis();
 
+        /**
+         * todo 处理 PullResult 拉取消息的结果
+         */
         PullCallback pullCallback = new PullCallback() {
+            // 拉取消息成功
             @Override
             public void onSuccess(PullResult pullResult) {
                 if (pullResult != null) {
@@ -350,6 +355,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         subscriptionData);
 
                     switch (pullResult.getPullStatus()) {
+                        // todo 拉取到了消息
                         case FOUND:
                             long prevRequestOffset = pullRequest.getNextOffset();
                             pullRequest.setNextOffset(pullResult.getNextBeginOffset());
@@ -366,7 +372,10 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                                 DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(pullRequest.getConsumerGroup(),
                                     pullRequest.getMessageQueue().getTopic(), pullResult.getMsgFoundList().size());
 
+                                // todo 这是干什么
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
+
+                                // todo 消息 提交 给 消费者 消费
                                 DefaultMQPushConsumerImpl.this.consumeMessageService.submitConsumeRequest(
                                     pullResult.getMsgFoundList(),
                                     processQueue,
@@ -477,6 +486,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             classFilter // class filter
         );
         try {
+            // todo  从Broker 中拉取消息
             this.pullAPIWrapper.pullKernelImpl(
                 pullRequest.getMessageQueue(),
                 subExpression,
@@ -927,19 +937,21 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 this.checkConfig();
 
                 this.copySubscription();
-
+                // 消息消费模式: 集群模式 ; 广播模式
                 if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
                     this.defaultMQPushConsumer.changeInstanceNameToPID();
                 }
 
+                // todo MQClientManager 是对 MQClientInstance 的管理； 这里将创建 MqClientInstance 实例，也就是消费者的NettyClient 通讯
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
-
+                // rebalanceImpl 重平衡
                 this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
                 this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
                 this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
                 this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
 
                 if (this.pullAPIWrapper == null) {
+                    // todo ??
                     this.pullAPIWrapper = new PullAPIWrapper(
                         mQClientFactory,
                         this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
@@ -964,12 +976,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 this.offsetStore.load();
 
                 if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
+                    // todo 有序消息-消费
                     this.consumeOrderly = true;
                     this.consumeMessageService =
                         new ConsumeMessageOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
                     //POPTODO reuse Executor ?
                     this.consumeMessagePopService = new ConsumeMessagePopOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
                 } else if (this.getMessageListenerInner() instanceof MessageListenerConcurrently) {
+                    // todo 并发消费
                     this.consumeOrderly = false;
                     this.consumeMessageService =
                         new ConsumeMessageConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
@@ -977,7 +991,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     this.consumeMessagePopService =
                         new ConsumeMessagePopConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
                 }
-
+                // todo 启动消费者 清除过期消息
                 this.consumeMessageService.start();
                 // POPTODO
                 this.consumeMessagePopService.start();

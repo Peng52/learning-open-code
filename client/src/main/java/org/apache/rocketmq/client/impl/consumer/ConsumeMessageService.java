@@ -16,11 +16,24 @@
  */
 package org.apache.rocketmq.client.impl.consumer;
 
-import java.util.List;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
 
+import java.util.List;
+
+/**
+ * 1. ConsumeMessageConcurrentlyService ：处理并发消费模式
+ * - 将任务提交到 consumeExecutor线程池
+ * - 在 run()方法中调用用户的 MessageListenerConcurrently
+ * - 根据消费结果进行ACK或重试
+ * 2. ConsumeMessageOrderlyService：专门用于顺序消费场景的实现。
+ * - ​​队列加锁​​：对每个消息队列加锁，确保同一时间只有一个线程消费该队列
+ * - ​​顺序拉取​​：严格按照队列中的消息顺序进行消费
+ * - ​​锁续期​​：通过定时任务定期续期队列锁，防止消费过程中锁过期
+ * -   顺序提交​​：确保消费成功后才提交下一条消息
+ * 3. ConsumeMessagePopConcurrentlyService：基于POP（Pop Over Pull）模式的并发消费服务。
+ */
 public interface ConsumeMessageService {
     void start();
 
@@ -37,13 +50,13 @@ public interface ConsumeMessageService {
     ConsumeMessageDirectlyResult consumeMessageDirectly(final MessageExt msg, final String brokerName);
 
     void submitConsumeRequest(
-        final List<MessageExt> msgs,
-        final ProcessQueue processQueue,
-        final MessageQueue messageQueue,
-        final boolean dispathToConsume);
+            final List<MessageExt> msgs,
+            final ProcessQueue processQueue,
+            final MessageQueue messageQueue,
+            final boolean dispathToConsume);
 
     void submitPopConsumeRequest(
-        final List<MessageExt> msgs,
-        final PopProcessQueue processQueue,
-        final MessageQueue messageQueue);
+            final List<MessageExt> msgs,
+            final PopProcessQueue processQueue,
+            final MessageQueue messageQueue);
 }

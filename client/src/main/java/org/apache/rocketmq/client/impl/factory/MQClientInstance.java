@@ -101,7 +101,8 @@ public class MQClientInstance {
     private final ConcurrentMap<String, MQProducerInner> producerTable = new ConcurrentHashMap<>();
 
     /**
-     * The container of the consumer in the current client. The key is the name of consumerGroup.
+     * The container of the the currenconsumer in t client. The key is the name of consumerGroup.
+     * todo 消费者
      */
     private final ConcurrentMap<String, MQConsumerInner> consumerTable = new ConcurrentHashMap<>();
 
