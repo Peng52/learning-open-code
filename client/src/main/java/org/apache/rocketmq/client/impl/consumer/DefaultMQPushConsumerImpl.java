@@ -944,14 +944,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                 // todo MQClientManager 是对 MQClientInstance 的管理； 这里将创建 MqClientInstance 实例，也就是消费者的NettyClient 通讯
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
-                // rebalanceImpl 重平衡
+                // todo rebalanceImpl 重平衡
                 this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
                 this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
                 this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
                 this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
 
                 if (this.pullAPIWrapper == null) {
-                    // todo ??
+                    // todo 封装了 pull 拉取消息的发送、解析 通讯相关接口封装。(它封装了与 Broker 进行消息拉取（Pull）的所有底层细节)
                     this.pullAPIWrapper = new PullAPIWrapper(
                         mQClientFactory,
                         this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());

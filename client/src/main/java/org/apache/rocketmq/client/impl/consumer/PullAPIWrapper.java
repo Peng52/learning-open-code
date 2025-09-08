@@ -52,6 +52,10 @@ import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
+/**
+ * PullAPIWrapper是 RocketMQ 客户端中一个非常核心的组件，它封装了与 Broker 进行消息拉取（Pull）的所有底层细节。
+ * 这个类负责构建拉取请求、处理网络通信、解析响应结果，是 Push 消费模式（实际基于 Pull 实现）和 Pull 消费模式共同依赖的基础设施。
+ */
 public class PullAPIWrapper {
     private static final Logger log = LoggerFactory.getLogger(PullAPIWrapper.class);
     private final MQClientInstance mQClientFactory;
@@ -121,6 +125,7 @@ public class PullAPIWrapper {
                 }
             }
 
+            // todo 执行hook方法，实现消息的过滤功能
             if (this.hasHook()) {
                 FilterMessageContext filterMessageContext = new FilterMessageContext();
                 filterMessageContext.setUnitMode(unitMode);
