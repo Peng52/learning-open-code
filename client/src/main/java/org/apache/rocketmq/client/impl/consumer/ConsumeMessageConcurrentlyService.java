@@ -381,6 +381,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         
         /**
          * todo 消费者线程，开始消费消息
+         * @see ConsumeRequest
          */
         @Override
         public void run() {

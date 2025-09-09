@@ -956,6 +956,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                         mQClientFactory,
                         this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
                 }
+                // todo 注册过滤器
                 this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
 
                 if (this.defaultMQPushConsumer.getOffsetStore() != null) {

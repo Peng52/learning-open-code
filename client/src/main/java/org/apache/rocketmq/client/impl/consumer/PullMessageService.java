@@ -30,6 +30,13 @@ import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class PullMessageService extends ServiceThread {
     private final Logger logger = LoggerFactory.getLogger(PullMessageService.class);
+    /**
+     * todo
+     * 消息请求队列
+     * 1. BlockQueue 一般用来做 生产者 - 消费者 模型
+     * 2. 在 ​​Pull 模式​​ 下，客户端（Consumer）会主动调用 pullMessage()方法，生成 PullRequest并放入 messageRequestQueue，然后由 PullMessageService线程处理。
+     * 3. 在 ​​Push 模式​​ 下，虽然叫 "Push"，但 RocketMQ 底层仍然是 ​​Pull 机制​​，只不过 Consumer 会 ​​自动提交 PullRequest​​ 到 messageRequestQueue，模拟 Push 的效果。
+     */
     private final LinkedBlockingQueue<MessageRequest> messageRequestQueue = new LinkedBlockingQueue<>();
 
     private final MQClientInstance mQClientFactory;
