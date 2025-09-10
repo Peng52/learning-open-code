@@ -29,6 +29,10 @@ import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 
 public class PullMessageService extends ServiceThread {
+
+
+
+
     private final Logger logger = LoggerFactory.getLogger(PullMessageService.class);
     /**
      * todo
