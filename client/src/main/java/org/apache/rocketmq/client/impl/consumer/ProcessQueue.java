@@ -70,6 +70,9 @@ public class ProcessQueue {
     }
 
     /**
+     * RocketMQ 过期消息清理机制
+     * 这个方法是在消费者端执行的，目的是为了处理那些已经消费但长时间没有确认的消息（可能是消费失败但没有被重新投递的消息）。
+     * 通过将消息发送回Broker，Broker会重新投递这条消息（根据延迟级别）。
      * @param pushConsumer
      */
     public void cleanExpiredMsg(DefaultMQPushConsumer pushConsumer) {
