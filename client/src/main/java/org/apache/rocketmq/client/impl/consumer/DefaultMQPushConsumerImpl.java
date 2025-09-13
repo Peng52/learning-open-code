@@ -246,6 +246,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
     /**
      * todo 拉取消息
+     * @see PullMessageService#pullMessage(PullRequest)
      */
     public void pullMessage(final PullRequest pullRequest) {
         final ProcessQueue processQueue = pullRequest.getProcessQueue();
@@ -295,9 +296,14 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
 
         if (!this.consumeOrderly) {
+            // todo 并发消费处理 : 如果实际跨度超过并发消费的最大允许跨度，就会调用PullRequesetLater延迟拉取
             if (processQueue.getMaxSpan() > this.defaultMQPushConsumer.getConsumeConcurrentlyMaxSpan()) {
+                // processQueue.getMaxSpan() 该方法返回消息队列（msgTreeMap）中最大偏移量和最小偏移量的差值（即 lastKey() - firstKey()）。
+                // 这反映了队列中积压的消息范围。
+                // todo 流控处理
                 this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_CACHE_FLOW_CONTROL);
                 if ((queueMaxSpanFlowControlTimes++ % 1000) == 0) {
+                    // todo 每触发1000次打印一次，避免频繁打印
                     log.warn(
                         "the queue's messages, span too long, so do flow control, minOffset={}, maxOffset={}, maxSpan={}, pullRequest={}, flowControlTimes={}",
                         processQueue.getMsgTreeMap().firstKey(), processQueue.getMsgTreeMap().lastKey(), processQueue.getMaxSpan(),
@@ -306,7 +312,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 return;
             }
         } else {
+            // todo 顺序消费处理
             if (processQueue.isLocked()) {
+                // 检查队列是否被锁定。在顺序消费中，队列锁由Broker管理，消费者需获取锁才能消费，以确保同一队列只被一个消费者实例处理，保证顺序性。
                 if (!pullRequest.isPreviouslyLocked()) {
                     long offset = -1L;
                     try {
@@ -331,6 +339,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     pullRequest.setNextOffset(offset);
                 }
             } else {
+                // 延迟拉取消息
                 this.executePullRequestLater(pullRequest, pullTimeDelayMillsWhenException);
                 log.info("pull message later because not locked in broker, {}", pullRequest);
                 return;
