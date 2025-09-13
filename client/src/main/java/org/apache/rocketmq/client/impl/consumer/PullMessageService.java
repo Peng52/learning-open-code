@@ -48,6 +48,9 @@ public class PullMessageService extends ServiceThread {
         this.mQClientFactory = mQClientFactory;
     }
 
+    /**
+     * todo 延迟 timeDelay 后延迟消息
+     */
     public void executePullRequestLater(final PullRequest pullRequest, final long timeDelay) {
         if (!isStopped()) {
             this.scheduledExecutorService.schedule(new Runnable() {
@@ -61,6 +64,9 @@ public class PullMessageService extends ServiceThread {
         }
     }
 
+    /**
+     * todo 立即拉取消息
+     */
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         try {
             this.messageRequestQueue.put(pullRequest);
@@ -111,7 +117,8 @@ public class PullMessageService extends ServiceThread {
     }
 
     /**
-     * todo 拉取消息； 主动拉取消息，实现消息的推送
+     * todo 拉取消息；
+     * todo 主动拉取消息，实现消息的推送
      */
     private void pullMessage(final PullRequest pullRequest) {
         final MQConsumerInner consumer = this.mQClientFactory.selectConsumer(pullRequest.getConsumerGroup());
@@ -136,7 +143,8 @@ public class PullMessageService extends ServiceThread {
 
 
     /**
-     * todo 线程循环拉取消息
+     * todo 线程循环 拉取 消息
+     * 1. 实现消息的 推送push  或 拉pull 拉取两种模式
      */
     @Override
     public void run() {

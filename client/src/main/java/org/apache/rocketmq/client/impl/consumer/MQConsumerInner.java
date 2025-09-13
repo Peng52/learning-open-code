@@ -26,6 +26,7 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
 
 /**
  * Consumer inner interface
+ * todo 消息消费者 接口定义
  */
 public interface MQConsumerInner {
     String groupName();

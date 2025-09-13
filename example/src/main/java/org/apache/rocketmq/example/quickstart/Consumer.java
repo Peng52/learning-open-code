@@ -36,6 +36,7 @@ public class Consumer {
         /*
          * Instantiate with specified consumer group name.
          * todo DefaultMQPushConsumer 创建了消费者客户端
+         *  创建是消息 推送消费者 消费broker 推送的消息。
          */
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(CONSUMER_GROUP);
 

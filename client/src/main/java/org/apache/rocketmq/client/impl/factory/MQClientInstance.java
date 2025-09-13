@@ -337,6 +337,7 @@ public class MQClientInstance {
                     // todo 启动定时任务，从namesvr 中拉取消息
                     this.startScheduledTask();
                     // Start pull service
+                    // todo pullMessageService 继承了 ServiceThread ; 这里启动了线程从broker中拉取消息
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();

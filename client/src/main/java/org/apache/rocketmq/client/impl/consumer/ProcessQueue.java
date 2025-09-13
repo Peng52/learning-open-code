@@ -35,6 +35,14 @@ import org.apache.rocketmq.remoting.protocol.body.ProcessQueueInfo;
 
 /**
  * Queue consumption snapshot
+ * ProcessQueue是RocketMQ客户端中用于管理消息队列消费快照的核心类。它主要负责：
+ * ​​消息存储与维护​​：存储从Broker拉取的消息，并维护消息的偏移量（offset）、数量、大小等元数据。
+ * ​​消费状态跟踪​​：记录消费进度、拉取时间、消费时间等，支持顺序消费和并发消费模式。
+ * ​​重平衡锁管理​​：在消费者组发生重平衡（如消费者实例增减）时，通过锁机制确保队列分配的原子性和一致性，避免消息被重复消费。
+ * ​​资源监控与流控​​：通过原子变量跟踪消息计数和大小，实现内存管理和流控，防止消费者过载。
+ * ProcessQueue充当了消费者与Broker之间的中间缓冲区，协调消息的拉取、消费和状态同步，是RocketMQ实现可靠消息消费的基础组件。
+ *
+ * ​​
  */
 public class ProcessQueue {
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
