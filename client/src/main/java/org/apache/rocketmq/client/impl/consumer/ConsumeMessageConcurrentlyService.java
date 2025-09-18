@@ -197,6 +197,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             // todo 消费消息 (这种设计思路参考， 线程池分发的这种，类实现run()方法)
             ConsumeRequest consumeRequest = new ConsumeRequest(msgs, processQueue, messageQueue);
             try {
+                // todo 提交到线程池中执行，消费消息
                 this.consumeExecutor.submit(consumeRequest);
             } catch (RejectedExecutionException e) {
                 this.submitConsumeRequestLater(consumeRequest);
@@ -359,6 +360,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }, 5000, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * todo ConsumeMessageConcurrentlyService 并发消费
+     * 实现了Runnable 来消费消息
+     */
     class ConsumeRequest implements Runnable {
         private final List<MessageExt> msgs;
         private final ProcessQueue processQueue;

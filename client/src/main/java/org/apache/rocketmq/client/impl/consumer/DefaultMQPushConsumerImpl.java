@@ -127,6 +127,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     private boolean consumeOrderly = false;
     private MessageListener messageListenerInner;
     private OffsetStore offsetStore;
+    // todo 消息消费服务
     private ConsumeMessageService consumeMessageService;
     private ConsumeMessageService consumeMessagePopService;
     private long queueFlowControlTimes = 0;
@@ -389,7 +390,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                                 // todo 这是干什么
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
 
-                                // todo 消息 提交 给 消费者 消费
+                                // todo 消息 提交 给 消费者 消费 (提交到线程池 消费消息)
+                                // RocketMQ客户端为每一个消费组创建独立的消费线程池，即在并 发消费模式下，
+                                // 单个消费组内的并发度为线程池线程个数。线程池处 理一批消息后会向Broker汇报消息消费进度。
                                 DefaultMQPushConsumerImpl.this.consumeMessageService.submitConsumeRequest(
                                     pullResult.getMsgFoundList(),
                                     processQueue,
