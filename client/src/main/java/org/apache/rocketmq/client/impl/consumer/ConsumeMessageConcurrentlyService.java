@@ -244,6 +244,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
+    /**
+     * 消费结果处理
+     * 1. 提交消费进度
+     */
     public void processConsumeResult(
         final ConsumeConcurrentlyStatus status,
         final ConsumeConcurrentlyContext context,
@@ -259,8 +263,11 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 if (ackIndex >= consumeRequest.getMsgs().size()) {
                     ackIndex = consumeRequest.getMsgs().size() - 1;
                 }
+                // 成功消费的消息数
                 int ok = ackIndex + 1;
+                // 失败消息数
                 int failed = consumeRequest.getMsgs().size() - ok;
+                // 更新统计信息
                 this.getConsumerStatsManager().incConsumeOKTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), ok);
                 this.getConsumerStatsManager().incConsumeFailedTPS(consumerGroup, consumeRequest.getMessageQueue().getTopic(), failed);
                 break;
@@ -278,37 +285,42 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
                     MessageExt msg = consumeRequest.getMsgs().get(i);
                     log.warn("BROADCASTING, the message consume failed, drop it, {}", msg.toString());
+                    // 失败消息直接丢弃（无重试机制）
+                    // 广播模式下每个Consumer独立消费，无全局进度概念
                 }
                 break;
             case CLUSTERING:
                 List<MessageExt> msgBackFailed = new ArrayList<>(consumeRequest.getMsgs().size());
                 for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
                     MessageExt msg = consumeRequest.getMsgs().get(i);
-                    // Maybe message is expired and cleaned, just ignore it.
+                    // Maybe message is expired and cleaned, just ignore it.  // 检查消息是否已被清理
                     if (!consumeRequest.getProcessQueue().containsMessage(msg)) {
                         log.info("Message is not found in its process queue; skip send-back-procedure, topic={}, "
                                 + "brokerName={}, queueId={}, queueOffset={}", msg.getTopic(), msg.getBrokerName(),
-                            msg.getQueueId(), msg.getQueueOffset());
+                            msg.getQueueId(), msg.getQueueOffset()); // 跳过已清理消息
                         continue;
                     }
+                    // todo 发送消息回Broker重试
                     boolean result = this.sendMessageBack(msg, context);
-                    if (!result) {
-                        msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
-                        msgBackFailed.add(msg);
+                    if (!result) {// 发送失败处理
+                        msg.setReconsumeTimes(msg.getReconsumeTimes() + 1); // 增加重试次数
+                        msgBackFailed.add(msg); // 加入失败列表
                     }
                 }
-
+                // 处理发送失败的消息
                 if (!msgBackFailed.isEmpty()) {
+                    // // 从原列表移除
                     consumeRequest.getMsgs().removeAll(msgBackFailed);
-
+                    // todo 重新提交消费请求（延迟重试）
                     this.submitConsumeRequestLater(msgBackFailed, consumeRequest.getProcessQueue(), consumeRequest.getMessageQueue());
                 }
                 break;
             default:
                 break;
         }
-
+        // 从ProcessQueue移除消息并获取新偏移量
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
+        // 更新消费进度
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {
             this.defaultMQPushConsumerImpl.getOffsetStore().updateOffset(consumeRequest.getMessageQueue(), offset, true);
         }
@@ -474,6 +486,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
                 .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
+            //todo pengcheng: 消费结果
             if (!processQueue.isDropped()) {
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {
