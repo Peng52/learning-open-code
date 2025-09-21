@@ -257,6 +257,9 @@ public class RebalancePushImpl extends RebalanceImpl {
         }
     }
 
+    /**
+     * todo  RebalancePushImpl 这里开始拉取消息
+     */
     @Override
     public void dispatchPullRequest(final List<PullRequest> pullRequestList, final long delay) {
         for (PullRequest pullRequest : pullRequestList) {

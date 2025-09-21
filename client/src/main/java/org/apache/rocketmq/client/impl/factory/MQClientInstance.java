@@ -1014,6 +1014,12 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 1.向MQClientFactory注册当前消费者
+     * 2.检测是否重复注册同一消费者组（consumerGroup）
+     * 3.注册失败时执行资源清理并抛出异常
+     * 4.保障JVM内同一消费者组仅存在一个活跃实例
+     */
     public synchronized boolean registerConsumer(final String group, final MQConsumerInner consumer) {
         if (null == group || null == consumer) {
             return false;

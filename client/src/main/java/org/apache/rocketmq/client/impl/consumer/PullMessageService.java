@@ -66,6 +66,7 @@ public class PullMessageService extends ServiceThread {
 
     /**
      * todo 立即拉取消息
+     * 向 messageRequestQueue 队列中加入
      */
     public void executePullRequestImmediately(final PullRequest pullRequest) {
         try {
@@ -152,7 +153,7 @@ public class PullMessageService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
-                // todo 为什么需要这个？
+                // todo take() 方法会让线程一直阻塞等待； 
                 MessageRequest messageRequest = this.messageRequestQueue.take();
                 if (messageRequest.getMessageRequestMode() == MessageRequestMode.POP) {
                     this.popMessage((PopRequest) messageRequest);

@@ -47,6 +47,10 @@ public class MQClientManager {
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig) {
         return getOrCreateMQClientInstance(clientConfig, null);
     }
+    /**
+     * 向MQClientInstance注册消费者并启动 MQClientInstance，
+     * JVM中的所有消费者、生产者持有同一个 MQClientInstance，MQClientInstance只会启动一次。
+     */
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
         String clientId = clientConfig.buildMQClientId();
         MQClientInstance instance = this.factoryTable.get(clientId);

@@ -226,7 +226,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
-
+                // 向MQClientInstance注册消费者并启动 MQClientInstance，
+                // JVM中的所有消费者、生产者持有同一个 MQClientInstance，MQClientInstance只会启动一次。
                 // todo 创建 MQ Client
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 

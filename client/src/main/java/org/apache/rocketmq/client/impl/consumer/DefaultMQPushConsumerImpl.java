@@ -250,6 +250,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
      * @see PullMessageService#pullMessage(PullRequest)
      */
     public void pullMessage(final PullRequest pullRequest) {
+
+        // 消费者端: 内存中的消息处理队列，是连接Broker与消费线程的关键枢纽
         final ProcessQueue processQueue = pullRequest.getProcessQueue();
         if (processQueue.isDropped()) {
             log.info("the pull request[{}] is dropped.", pullRequest.toString());
@@ -273,9 +275,17 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
 
+        /**
+         * 1.暂停消息拉取
+         * 2.延迟重试拉取请求
+         * 3.智能预警日志输出
+         * ---------------
+         * 1. 消息数量  1000条  防止OOM             场景1：海量小消息（数量先超限）
+         * 2. 消息体积  100MB   防止大消息撑爆内存   场景2：少量大消息（体积先超限）
+         */
         long cachedMessageCount = processQueue.getMsgCount().get();
         long cachedMessageSizeInMiB = processQueue.getMsgSize().get() / (1024 * 1024);
-
+        // 消息流控 判断，如果处理队列中>=1000条消息，则延迟拉取消息
         if (cachedMessageCount > this.defaultMQPushConsumer.getPullThresholdForQueue()) {
             this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_CACHE_FLOW_CONTROL);
             if ((queueFlowControlTimes++ % 1000) == 0) {
@@ -960,6 +970,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 }
 
                 // todo MQClientManager 是对 MQClientInstance 的管理； 这里将创建 MqClientInstance 实例，也就是消费者的NettyClient 通讯
+                // todo mQClientFactory  就是 MQClientInstance 实例, 也就是 netty 通讯实例，各种通讯方法的封装
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
                 // todo rebalanceImpl 重平衡
                 this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
@@ -975,15 +986,18 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 }
                 // todo 注册过滤器
                 this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
-
+                // // 1. 优先使用自定义OffsetStore
                 if (this.defaultMQPushConsumer.getOffsetStore() != null) {
                     this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
                 } else {
+                    // // 2. 未自定义时根据消费模式创建
                     switch (this.defaultMQPushConsumer.getMessageModel()) {
                         case BROADCASTING:
+                            // 广播模式(BROADCASTING)：使用本地文件存储位点
                             this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                             break;
                         case CLUSTERING:
+                            // 集群模式(CLUSTERING)：使用Broker远程存储位点 内部使用MQClientAPIImpl通信
                             this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
                             break;
                         default:
@@ -991,6 +1005,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                     }
                     this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
                 }
+                // // 3. 加载历史位点数据  (RemoteBrokerOffsetStore从Broker实时获取)
                 this.offsetStore.load();
 
                 if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
@@ -1013,7 +1028,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 this.consumeMessageService.start();
                 // POPTODO
                 this.consumeMessagePopService.start();
-
+                // 实现消费者实例的全局唯一注册​​
                 boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
@@ -1037,9 +1052,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             default:
                 break;
         }
-
+        //更新订阅关系
         this.updateTopicSubscribeInfoWhenSubscriptionChanged();
+        // 验证客户端在Broker的注册状态
         this.mQClientFactory.checkClientInBroker();
+        // 触发即时负载均衡
         if (this.mQClientFactory.sendHeartbeatToAllBrokerWithLock()) {
             this.mQClientFactory.rebalanceImmediately();
         }
@@ -1416,6 +1433,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         }
     }
 
+    /**
+     * todo 重平衡
+     */
     @Override
     public boolean tryRebalance() {
         if (!this.pause) {

@@ -48,6 +48,7 @@ public class RebalanceService extends ServiceThread {
             if (interval < minInterval) {
                 realWaitInterval = minInterval - interval;
             } else {
+                //todo pengcheng:
                 boolean balanced = this.mqClientFactory.doRebalance();
                 realWaitInterval = balanced ? waitInterval : minInterval;
                 lastRebalanceTimestamp = System.currentTimeMillis();
