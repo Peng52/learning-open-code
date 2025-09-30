@@ -282,6 +282,8 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
          * ---------------
          * 1. 消息数量  1000条  防止OOM             场景1：海量小消息（数量先超限）
          * 2. 消息体积  100MB   防止大消息撑爆内存   场景2：少量大消息（体积先超限）
+         * 3. 消息跨度​​maxSpan  防长尾延迟          消息处理耗时不均场景
+         *
          */
         long cachedMessageCount = processQueue.getMsgCount().get();
         long cachedMessageSizeInMiB = processQueue.getMsgSize().get() / (1024 * 1024);
@@ -306,6 +308,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             return;
         }
 
+        // 这里也是流控
         if (!this.consumeOrderly) {
             // todo 并发消费处理 : 如果实际跨度超过并发消费的最大允许跨度，就会调用PullRequesetLater延迟拉取
             if (processQueue.getMaxSpan() > this.defaultMQPushConsumer.getConsumeConcurrentlyMaxSpan()) {
@@ -375,7 +378,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
             @Override
             public void onSuccess(PullResult pullResult) {
                 if (pullResult != null) {
-                    // todo 处理 pullMessage
+                    // todo 处理 PullResult 拉取到的消息
                     pullResult = DefaultMQPushConsumerImpl.this.pullAPIWrapper.processPullResult(pullRequest.getMessageQueue(), pullResult,
                         subscriptionData);
 
