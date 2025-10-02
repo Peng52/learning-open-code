@@ -252,6 +252,7 @@ public class PullAPIWrapper {
                 brokerAddr,
                 requestHeader,
                 timeoutMillis,
+                // todo 异步方式拉取消息，所以这里 pullResult == null
                 communicationMode,
                 pullCallback);
 
