@@ -55,6 +55,10 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     public void load() {
     }
 
+    /**
+     * todo 更新 Offset 偏移量
+     * 这里只是 内存级别 更新
+     */
     @Override
     public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
         if (mq != null) {
@@ -154,6 +158,9 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
     }
 
+    /**
+     * todo 向 broker 持久化 offset
+     */
     @Override
     public void persist(MessageQueue mq) {
         ControllableOffset offset = this.offsetTable.get(mq);

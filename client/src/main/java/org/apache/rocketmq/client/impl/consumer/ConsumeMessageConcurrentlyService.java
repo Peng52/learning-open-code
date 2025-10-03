@@ -318,7 +318,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             default:
                 break;
         }
-        // 从ProcessQueue移除消息并获取新偏移量
+        // todo 从ProcessQueue移除消息并获取新偏移量
         long offset = consumeRequest.getProcessQueue().removeMessage(consumeRequest.getMsgs());
         // 更新消费进度
         if (offset >= 0 && !consumeRequest.getProcessQueue().isDropped()) {

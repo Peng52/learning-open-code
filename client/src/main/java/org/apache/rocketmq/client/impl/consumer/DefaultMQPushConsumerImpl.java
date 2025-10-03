@@ -400,7 +400,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                                 DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(pullRequest.getConsumerGroup(),
                                     pullRequest.getMessageQueue().getTopic(), pullResult.getMsgFoundList().size());
 
-                                // todo 这是干什么
+                                // todo 消息放到 ProcessQueue 处理队列中
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
 
                                 // todo 消息 提交 给 消费者 消费 (提交到线程池 消费消息)

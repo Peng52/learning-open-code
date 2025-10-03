@@ -217,6 +217,7 @@ public class ProcessQueue {
                     }
 
                     if (!msgTreeMap.isEmpty()) {
+                        // todo 通过 firstKey()获取剩余消息的最小偏移量，作为新的消费起始点 offset
                         result = msgTreeMap.firstKey();
                     }
                 }

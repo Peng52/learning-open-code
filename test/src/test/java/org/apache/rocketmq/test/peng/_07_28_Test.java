@@ -2,7 +2,10 @@ package org.apache.rocketmq.test.peng;
 
 import org.junit.Test;
 
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * @author : pengcheng
@@ -35,5 +38,35 @@ public class _07_28_Test {
 
         System.out.println("");
 
+    }
+
+
+    /**
+     * 10-03
+     */
+    @Test
+    public void test1003() {
+        InetSocketAddress socketAddress2 = new InetSocketAddress("255.255.255.255", 8080);
+        byte[] address = socketAddress2.getAddress().getAddress();
+
+        long a = 255;
+        System.out.println(a);
+    }
+
+    /**
+     * TreeMap
+     */
+    @Test
+    public void testTreeMap() {
+        TreeMap<Integer, String> msgTreeMap = new TreeMap<>();
+        msgTreeMap.put(1, "111");
+        msgTreeMap.put(2, "111");
+        msgTreeMap.put(3, "111");
+
+        Map.Entry<Integer, String> integerStringEntry = msgTreeMap.firstEntry();
+
+        Map.Entry<Integer, String> integerStringEntry1 = msgTreeMap.lastEntry();
+
+        System.out.println(integerStringEntry);
     }
 }
